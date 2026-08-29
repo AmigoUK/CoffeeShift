@@ -9,7 +9,7 @@ texturing, drink assembly), Learn/Practice/Shift modes and ~20 levels. All UI
 copy, in-game messages and technical docs are **British English**.
 
 ## Tech Stack (actual installed versions)
-
+- Playwright ^1.62.1 (browser E2E — `npm run test:e2e`, needs `npx playwright install chromium`)
 - Node v22.23.2, npm 10.9.8
 - Vite ^8.2.2, vanilla TypeScript (strict, `noUncheckedIndexedAccess`)
 - Phaser ^4.2.1 (gameplay canvas)

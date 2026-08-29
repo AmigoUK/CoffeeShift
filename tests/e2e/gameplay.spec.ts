@@ -1,0 +1,155 @@
+import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { activeScene, callHook, hold, holdUntil, hookData, sceneSatisfies, tap, waitForBoot } from './helpers';
+
+// Button positions in 390x844 game coordinates.
+const DOSE = [65, 738] as const;
+const TAMP = [195, 738] as const;
+const BREW = [325, 738] as const;
+const TAB_MILK = [195, 290] as const;
+const TAB_ASSEMBLY = [325, 290] as const;
+const LARGE_JUG = [195, 680] as const;
+const FILL = [65, 738] as const;
+const PURGE = [195, 738] as const;
+const STEAM = [325, 738] as const;
+const DEMITASSE = [65, 655] as const;
+const LATTE_GLASS = [65, 711] as const;
+const ADD_ESPRESSO = [65, 770] as const;
+const POUR_MILK = [325, 770] as const;
+const SERVE = [320, 812] as const;
+const FEEDBACK_NEXT = [195, 640] as const;
+
+async function startLevel(page: Page, levelId: string): Promise<void> {
+  await callHook<unknown>(page, 'startLevel', levelId);
+  await sceneSatisfies(page, (s) => s.level?.id === levelId, 15_000);
+  await page.waitForTimeout(400);
+}
+
+/** Dose 18 g, tamp in-band, brew to 26.5-28 s, stop — one good shot. Tamp retries because
+ * evaluate latency can release the hold just past the 15-20 kg band on a slow box. */
+async function pullGoodShot(page: Page): Promise<void> {
+  for (let i = 0; i < 4; i++) await tap(page, DOSE[0], DOSE[1]);
+  let tampGood = false;
+  for (let attempt = 0; attempt < 5 && !tampGood; attempt++) {
+    // Fixed 1250 ms hold ≈ 17.5 kg (ramp 14 kg/s): safely mid-band even with event jitter.
+    // Predicate-driven release is unusable here — evaluate latency (~0.45 s) overshoots the band.
+    await hold(page, TAMP[0], TAMP[1], 1250);
+    tampGood = (await sceneSatisfies(page, () => true)).ext.tampGood;
+  }
+  if (!tampGood) throw new Error('could not land a tamp inside the 15-20 kg band');
+  await tap(page, BREW[0], BREW[1]);
+  // Stop on a fixed 27.2 s of brew time. The grading band is 24-31 s, so ±3 s of
+  // event/frame jitter still lands in-band; polling for a tight window can skip
+  // it entirely when the main thread stalls between samples.
+  await page.waitForTimeout(27_200);
+  await tap(page, BREW[0], BREW[1]);
+  const afterStop = await sceneSatisfies(page, (s) => !s.ext.brewing && s.ext.pulls.length > 0);
+  const shot = afterStop.ext.pulls[0];
+  if (shot == null || shot.seconds < 24 || shot.seconds > 31) {
+    throw new Error(`shot outside the 24-31 s band: ${JSON.stringify(afterStop.ext.pulls)}`);
+  }
+}
+
+test.describe('gameplay', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await waitForBoot(page);
+    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+  });
+
+  test('Learn L1: guided espresso flow scores ≥98 and reaches the summary', async ({ page }) => {
+    test.slow();
+    await startLevel(page, 'L1');
+
+    await pullGoodShot(page);
+    await tap(page, TAB_ASSEMBLY[0], TAB_ASSEMBLY[1]);
+    await tap(page, DEMITASSE[0], DEMITASSE[1]);
+    await tap(page, ADD_ESPRESSO[0], ADD_ESPRESSO[1]);
+
+    // No DOM footer during Phaser gameplay.
+    const overlayHidden = await page.evaluate(() => document.getElementById('overlay')?.hidden);
+    expect(overlayHidden).toBe(true);
+
+    await tap(page, SERVE[0], SERVE[1]);
+    await sceneSatisfies(page, (s) => s.feedbackCard != null);
+    const report = (await hookData(page)).lastReport;
+    expect(report).not.toBeNull();
+    expect(report!.total).toBeGreaterThanOrEqual(98);
+    expect(['PERFECT_ORDER', 'CORRECT_DRINK']).toContain(report!.feedback[0]);
+
+    // Dismiss the card → summary screen with stars and Retry that restarts the level.
+    await tap(page, FEEDBACK_NEXT[0], FEEDBACK_NEXT[1]);
+    await expect(page.locator('[data-screen="summary"]')).toBeVisible();
+    await expect(page.locator('.stars')).toHaveAttribute('aria-label', /\d of 3 stars/);
+    await page.click('[data-action="retry"]');
+    await sceneSatisfies(page, (s) => s.level?.id === 'L1', 15_000);
+  });
+
+  test('Learn L3: overheated, over-foamed latte reports Milk Too Hot and Foam Too Thick', async ({ page }) => {
+    test.slow();
+    await startLevel(page, 'L3');
+    const order = (await activeScene(page)).orders[0];
+    if (order == null) throw new Error('L3 produced no order');
+
+    await pullGoodShot(page);
+
+    // Milk: large jug (latte small = 180 ml > 150), fill to line, purge, steam past 70 °C with shallow wand.
+    await tap(page, TAB_MILK[0], TAB_MILK[1]);
+    await tap(page, LARGE_JUG[0], LARGE_JUG[1]);
+    await holdUntil(page, FILL[0], FILL[1], (s) => s.milk.fillMl >= 158);
+    await tap(page, PURGE[0], PURGE[1]);
+    await tap(page, STEAM[0], STEAM[1]);
+    // Detect at 69.3 °C: with ~0.4 s tap latency at 3 °C/s the jug comes off just past 70 °C
+    // (MILK_TOO_HOT threshold) while staying under the 75 °C scorch point.
+    await sceneSatisfies(page, (s) => s.milk.tempC >= 69.3, 60_000);
+    await tap(page, STEAM[0], STEAM[1]); // remove jug while too hot but not scorched
+    await sceneSatisfies(page, (s) => !s.milk.steaming && !s.milk.ruined);
+    // Assembly: latte glass, shots, milk, serve.
+    await tap(page, TAB_ASSEMBLY[0], TAB_ASSEMBLY[1]);
+    await tap(page, LATTE_GLASS[0], LATTE_GLASS[1]);
+    for (let i = 0; i < order.shots; i++) await tap(page, ADD_ESPRESSO[0], ADD_ESPRESSO[1]);
+    await hold(page, POUR_MILK[0], POUR_MILK[1], 200);
+    await tap(page, SERVE[0], SERVE[1]);
+
+    await sceneSatisfies(page, (s) => s.feedbackCard != null);
+    const report = (await hookData(page)).lastReport;
+    expect(report!.feedback).toContain('MILK_TOO_HOT');
+    expect(report!.feedback).toContain('FOAM_TOO_THICK');
+    expect(report!.summarySentence.toLowerCase()).toContain('latte');
+  });
+
+  test('Shift meta: S1 unlocks after Learn, serves, records progress and Retry works', async ({ page }) => {
+    test.slow();
+    // Dev shortcut: mark all Learn lessons complete.
+    await page.evaluate(() => {
+      const raw = localStorage.getItem('coffee-shift.save.v1');
+      const save = raw != null ? JSON.parse(raw) as { progress?: { learn?: number[] } } : { progress: {} };
+      save.progress = save.progress ?? {};
+      save.progress.learn = [100, 100, 100, 100, 100];
+      localStorage.setItem('coffee-shift.save.v1', JSON.stringify(save));
+    });
+    await startLevel(page, 'S1');
+    const orders = (await activeScene(page)).orders;
+    expect(orders.length).toBe(3);
+
+    for (let i = 0; i < orders.length; i++) {
+      await tap(page, SERVE[0], SERVE[1]);
+      await sceneSatisfies(page, (s) => s.feedbackCard != null, 20_000);
+      await tap(page, FEEDBACK_NEXT[0], FEEDBACK_NEXT[1]);
+      await page.waitForTimeout(500);
+    }
+    await expect(page.locator('[data-screen="summary"]')).toBeVisible();
+    await expect(page.locator('.screen__title')).toHaveText('Shift complete!');
+
+    const shiftProgress = await page.evaluate(() => {
+      const raw = localStorage.getItem('coffee-shift.save.v1');
+      if (raw == null) return null;
+      const parsed = JSON.parse(raw) as { progress?: { shift?: { stars: number; best: number }[] } };
+      return parsed.progress?.shift?.[0] ?? null;
+    });
+    expect(shiftProgress).not.toBeNull();
+    expect(shiftProgress!.best).toBeGreaterThanOrEqual(0);
+    expect(shiftProgress!.stars).toBeGreaterThanOrEqual(0);
+    await expect(page.locator('[data-action="retry"]')).toBeVisible();
+  });
+});
