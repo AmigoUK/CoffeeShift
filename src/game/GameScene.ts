@@ -8,6 +8,7 @@ import { grade } from '../domain/grading';
 import { recordResult } from '../domain/progression';
 import { loadSave, writeSave } from '../domain/save';
 import type { SaveData } from '../domain/save';
+import { sfx } from './audio';
 import { FEEDBACK_LABELS, GAME_COPY, MENU } from '../ui/copy';
 export interface LevelCompletePayload {
   levelId: string;
@@ -111,6 +112,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.level = level;
     this.save = loadSave();
+    sfx.enabled = this.save.settings.sound;
     this.masteryBefore = { ...this.save.mastery };
     this.orders = generateOrders(level, mulberry32((Math.random() * 2 ** 32) >>> 0), this.save);
     this.drinkIndex = 0;
@@ -342,6 +344,9 @@ export class GameScene extends Phaser.Scene {
     recordResult(this.save, order, report);
     this.reports.push({ order, total: report.total, feedback: report.feedback });
     writeSave(this.save);
+    sfx.stopSteam();
+    sfx.clink();
+    if (report.total >= 70) { sfx.success(); this.buzz([30, 50, 30]); } else { sfx.failure(); }
     this.showFeedbackCard(report);
     this.game.events.emit('served', report);
   }
@@ -447,7 +452,7 @@ export class GameScene extends Phaser.Scene {
     }));
     this.controlsView?.add(this.makeButton(325, 738, 120, 50, () => (this.ext.brewing ? 'STOP' : 'Brew'), () => {
       if (this.ext.brewing) this.stopPull();
-      else if (this.ext.pulls.length < 3) this.ext.brewing = true;
+      else if (this.ext.pulls.length < 3) { this.ext.brewing = true; sfx.startExtraction(); }
       else this.toast('Three shots pulled already \u2014 that\u2019s the maximum.');
     }, this.ext.brewing ? COL.red : COL.coffee));
     this.controlsView?.add(this.makeButton(195, 794, 240, 44, () => 'Empty grinder \u00b7 start over', () => {
@@ -461,6 +466,8 @@ export class GameScene extends Phaser.Scene {
       seconds: Math.round(this.ext.brewSeconds * 10) / 10,
     });
     const inBand = this.ext.brewSeconds >= EXTRACTION.timeBandSeconds[0] && this.ext.brewSeconds <= EXTRACTION.timeBandSeconds[1];
+    sfx.stopExtraction();
+    this.buzz(inBand ? 30 : 0);
     this.toast(`Shot pulled: ${Math.round(this.ext.brewSeconds * 10) / 10}s${inBand ? ' \u2713' : ''}`);
     this.ext.brewing = false;
     this.ext.brewSeconds = 0;
@@ -501,16 +508,26 @@ export class GameScene extends Phaser.Scene {
       }
       if (this.milk.steaming) {
         this.milk.steaming = false;
+        sfx.stopSteam();
+        const order = this.currentDrink();
+        if (order != null) {
+          const target = order.extraHot ? MILK_TEMP.extraHot.target : this.milk.type === 'oat' ? MILK_TEMP.oat.target : MILK_TEMP.dairy.target;
+          const inBand = this.milk.tempC >= target[0] && this.milk.tempC <= target[1];
+          this.buzz(inBand ? [20, 40, 20] : 0);
+        }
         this.checkJugOverflow();
       } else if (this.milk.jug != null && this.milk.fillMl > 0) {
         this.milk.used = true;
         this.milk.steaming = true;
+        sfx.startSteam();
+        sfx.setSteamDepth(this.milk.wandDepth === 'deep');
       } else {
         this.toast('Pick a jug and fill it with milk first.');
       }
     }, this.milk.steaming ? COL.red : COL.coffee));
     this.controlsView?.add(this.makeButton(195, 794, 240, 44, () => `Wand depth: ${this.milk.wandDepth} (tap to toggle)`, () => {
       this.milk.wandDepth = this.milk.wandDepth === 'shallow' ? 'deep' : 'shallow';
+      sfx.setSteamDepth(this.milk.wandDepth === 'deep');
     }));
   }
 
@@ -699,6 +716,7 @@ export class GameScene extends Phaser.Scene {
       if (this.milk.tempC >= failAt + 5) {
         this.milk.steaming = false;
         this.milk.ruined = true;
+        sfx.stopSteam();
         this.toast('The milk is scorched \u2014 empty the jug and start again.');
       }
     }
@@ -722,8 +740,21 @@ export class GameScene extends Phaser.Scene {
       this.patienceBar.fillColor = remaining < 0.3 ? COL.red : COL.teal;
     }
 
+
     if (this.level.orderChanges && !this.orderChanged && this.time.now - this.orderStartTime > 5000) {
       this.changeOrder();
+    }
+  }
+
+  /** Haptic feedback gated by the vibration setting. Pass 0 or [] for "no buzz". */
+  private buzz(pattern: number | number[]): void {
+    if (!this.save.settings.vibration) return;
+    const p = Array.isArray(pattern) ? pattern : [pattern];
+    if (p.length === 0 || p[0] === 0) return;
+    try {
+      navigator.vibrate?.(p);
+    } catch {
+      // vibration unsupported — ignore
     }
   }
 
