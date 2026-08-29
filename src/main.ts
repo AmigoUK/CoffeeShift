@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { BootScene } from './game/BootScene';
-import { setInstallPrompt, setStartLevelHandler, show } from './ui/screens';
 import { GameScene } from './game/GameScene';
-import { loadSave } from './domain/save';
+import type { LevelCompletePayload } from './game/GameScene';
+import { setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
+import { loadSave, writeSave } from './domain/save';
+import { applyLevelResult, habitHints } from './domain/progression';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -27,8 +29,18 @@ game.events.on('start-level', (levelId: string) => {
   game.scene.start('game', { levelId });
 });
 
-game.events.on('level-complete', () => {
-  show('menu');
+game.events.on('level-complete', (payload: LevelCompletePayload) => {
+  const save = loadSave();
+  const { avg, stars } = applyLevelResult(save, payload.levelId, payload.reports);
+  writeSave(save);
+  showSummary({
+    levelId: payload.levelId,
+    avg,
+    stars,
+    reports: payload.reports.map((r) => ({ order: { drink: r.order.drink }, total: r.total, feedback: [...r.feedback] })),
+    masteryAfter: save.mastery,
+    hints: habitHints(save),
+  });
 });
 
 window.addEventListener('beforeinstallprompt', (event) => {

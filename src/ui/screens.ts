@@ -1,21 +1,31 @@
-import { APP_NAME, GAME_COPY, MENU, MODE_COPY, RECIPE_BOOK_COPY, SETTINGS_COPY, VESSEL_LABELS } from './copy';
+import { APP_NAME, FEEDBACK_LABELS, GAME_COPY, MENU, MODE_COPY, RECIPE_BOOK_COPY, SETTINGS_COPY, VESSEL_LABELS } from './copy';
 import { renderFooter } from './footer';
 import type { SaveData } from '../domain/save';
 import { defaultSave, loadSave, savePersistence, writeSave } from '../domain/save';
 import { DRINK_IDS, EXTRACTION, MILK_TEMP, RECIPES } from '../domain/recipes';
 import type { DrinkId } from '../domain/types';
-import { levelsForMode } from '../domain/levels';
+import { LEVELS, levelById, levelsForMode } from '../domain/levels';
 import {
   LEARN_PASS, isLearnUnlocked, isPracticeUnlocked, isShiftUnlocked, rankFor, starsFor,
 } from '../domain/progression';
 
 export type ScreenId = 'menu' | 'mode' | 'levels' | 'settings' | 'recipe-book' | 'summary' | 'game';
+
+export interface LevelSummaryData {
+  levelId: string;
+  avg: number;
+  stars: number;
+  reports: { order: { drink: string }; total: number; feedback: string[] }[];
+  masteryAfter: Record<string, number>;
+  hints: string[];
+}
 type Mode = 'learn' | 'practice' | 'shift';
 
 let save: SaveData = loadSave();
 let selectedMode: Mode = 'learn';
 let startLevelHandler: ((levelId: string) => void) | null = null;
 let installPrompt: { prompt: () => Promise<void> } | null = null;
+let summaryData: LevelSummaryData | null = null;
 
 
 
@@ -63,6 +73,7 @@ function renderScreen(id: ScreenId): string {
     case 'levels': return renderLevels();
     case 'settings': return renderSettings();
     case 'recipe-book': return renderRecipeBook();
+    case 'summary': return renderSummary();
     default: return shell(APP_NAME, '');
   }
 }
@@ -223,6 +234,61 @@ function renderRecipeBook(): string {
   `);
 }
 
+// ---- Level summary ----
+
+export function showSummary(data: LevelSummaryData): void {
+  summaryData = data;
+  save = loadSave();
+  show('summary');
+}
+
+function nextLevelId(levelId: string): string | null {
+  const index = LEVELS.findIndex((l) => l.id === levelId);
+  if (index < 0 || index + 1 >= LEVELS.length) return null;
+  const current = LEVELS[index]!;
+  const next = LEVELS[index + 1]!;
+  if (next.mode !== current.mode) return null;
+  const nextIndexInMode = LEVELS.filter((l) => l.mode === next.mode).findIndex((l) => l.id === next.id);
+  const unlocked = next.mode === 'learn' ? isLearnUnlocked(save, nextIndexInMode)
+    : next.mode === 'practice' ? isPracticeUnlocked(save, nextIndexInMode)
+      : isShiftUnlocked(save, nextIndexInMode);
+  return unlocked ? next.id : null;
+}
+
+function renderSummary(): string {
+  const s = summaryData;
+  if (s == null) return shell(APP_NAME, `<div class="btn-row"><button class="btn" data-action="menu">${MENU.back}</button></div>`);
+  const level = levelById(s.levelId);
+  const title = level?.mode === 'learn' ? GAME_COPY.learnComplete : GAME_COPY.levelComplete;
+  const starGlyphs = '\u2605\u2605\u2605'.slice(0, s.stars) + '\u2606\u2606\u2606'.slice(0, 3 - s.stars);
+  const chips = s.reports.map((r, i) => {
+    const labels = r.feedback
+      .filter((f) => f !== 'PERFECT_ORDER' && f !== 'CORRECT_DRINK')
+      .map((f) => FEEDBACK_LABELS[f as keyof typeof FEEDBACK_LABELS] ?? f);
+    const good = labels.length === 0;
+    return `<span class="chip ${good ? 'chip--good' : 'chip--bad'}">#${i + 1} ${r.total}%${labels.length > 0 ? ` \u00b7 ${labels.slice(0, 2).join(', ')}` : ' \u00b7 Perfect'}</span>`;
+  }).join('');
+  const masteryLines = Object.entries(s.masteryAfter)
+    .filter(([key]) => key.startsWith('drink:'))
+    .map(([key, value]) => {
+      const drinkName = RECIPES[key.slice('drink:'.length) as DrinkId]?.name ?? key;
+      return `${drinkName} mastery: ${Math.round(value)}%`;
+    });
+  const nextId = nextLevelId(s.levelId);
+  return shell(title, `
+    <p class="screen__subtitle" style="font-size:2rem;color:${s.avg >= 70 ? '#3a7d44' : '#c0392b'}">${s.avg}%</p>
+    <p class="stars" aria-label="${s.stars} of 3 stars" style="text-align:center;font-size:1.6rem">${starGlyphs}</p>
+    <div class="summary-chips">${chips}</div>
+    ${masteryLines.length > 0 ? `<div class="stack">${masteryLines.map((l) => `<span class="chip">${l}</span>`).join('')}</div>` : ''}
+    ${s.hints.length > 0 ? `<div class="stack">${s.hints.map((h) => `<p class="notice">${h}</p>`).join('')}</div>` : ''}
+    <div class="btn-row">
+      <button class="btn" data-action="retry">${MENU.retry}</button>
+      ${nextId != null ? `<button class="btn btn--primary" data-action="next-level" data-next-id="${nextId}">${MENU.next}</button>` : ''}
+      <button class="btn btn--ghost" data-action="menu">${MENU.back}</button>
+    </div>
+  `, level?.goal ?? '');
+}
+
 // ---- wiring ----
 
 function wireScreen(id: ScreenId, screen: HTMLElement): void {
@@ -233,6 +299,11 @@ function wireScreen(id: ScreenId, screen: HTMLElement): void {
       else if (action === 'mode') show('mode');
       else if (action === 'recipe-book') show('recipe-book');
       else if (action === 'settings') show('settings');
+      else if (action === 'retry') { if (summaryData != null) startLevelHandler?.(summaryData.levelId); }
+      else if (action === 'next-level') {
+        const nextId = (el as HTMLElement).dataset.nextId;
+        if (nextId != null) startLevelHandler?.(nextId);
+      }
       else if (action === 'reset-ask') wireResetConfirm(document.getElementById('reset-row') ?? screen);
     });
   });

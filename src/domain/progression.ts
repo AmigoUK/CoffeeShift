@@ -1,7 +1,7 @@
 import type { DrinkId, DrinkOrder, FeedbackId, ScoreReport } from './types';
 import { isMilkDrink } from './recipes';
+import { LEVELS, levelById } from './levels';
 import type { SaveData } from './save';
-
 export const LEARN_PASS = 60; // Learn levels pass at 60% total (generous)
 
 export function starsFor(total: number): number {
@@ -144,4 +144,23 @@ export function isShiftUnlocked(save: SaveData, index: number): boolean {
 /** Rank: Trainee until S7 earns ≥1 star, then Barista. */
 export function rankFor(save: SaveData): 'trainee' | 'barista' {
   return (save.progress.shift[6]?.stars ?? 0) >= 1 ? 'barista' : 'trainee';
+}
+
+/** Fold a finished level's reports into progress, rank and stats. Returns the level average and stars. */
+export function applyLevelResult(save: SaveData, levelId: string, reports: { total: number }[]): { avg: number; stars: number } {
+  const avg = reports.length === 0 ? 0 : Math.round(reports.reduce((s, r) => s + r.total, 0) / reports.length);
+  const level = levelById(levelId);
+  if (level == null) return { avg, stars: 0 };
+  const indexInMode = LEVELS.filter((l) => l.mode === level.mode).findIndex((l) => l.id === levelId);
+  if (indexInMode < 0) return { avg, stars: starsFor(avg) };
+  if (level.mode === 'shift') {
+    const prev = save.progress.shift[indexInMode] ?? { stars: 0, best: 0 };
+    save.progress.shift[indexInMode] = { stars: Math.max(prev.stars, starsFor(avg)), best: Math.max(prev.best, avg) };
+    save.stats.shiftsPlayed += 1;
+    save.rank = rankFor(save);
+    return { avg, stars: starsFor(avg) };
+  }
+  const arr = level.mode === 'learn' ? save.progress.learn : save.progress.practice;
+  arr[indexInMode] = Math.max(arr[indexInMode] ?? 0, avg);
+  return { avg, stars: starsFor(avg) };
 }

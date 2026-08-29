@@ -12,6 +12,7 @@ import { FEEDBACK_LABELS, GAME_COPY, MENU } from '../ui/copy';
 export interface LevelCompletePayload {
   levelId: string;
   reports: { order: DrinkOrder; total: number; feedback: FeedbackId[] }[];
+  masteryBefore: Record<string, number>;
 }
 
 interface ExtractionState {
@@ -82,6 +83,7 @@ export class GameScene extends Phaser.Scene {
   private transitioning = false;
   private wasteEvents: string[] = [];
   private reports: LevelCompletePayload['reports'] = [];
+  private masteryBefore: Record<string, number> = {};
 
   private ext: ExtractionState = freshExtraction();
   private milk: MilkState = freshMilk({ milks: ['whole'] } as LevelDef);
@@ -103,11 +105,13 @@ export class GameScene extends Phaser.Scene {
   create(data: { levelId?: string }): void {
     const level = data.levelId != null ? levelById(data.levelId) : undefined;
     if (level == null) {
-      this.game.events.emit('level-complete', { levelId: '', reports: [] } satisfies LevelCompletePayload);
+      this.game.events.emit('level-complete', { levelId: '', reports: [], masteryBefore: {} } satisfies LevelCompletePayload);
+      this.scene.stop();
       return;
     }
     this.level = level;
     this.save = loadSave();
+    this.masteryBefore = { ...this.save.mastery };
     this.orders = generateOrders(level, mulberry32((Math.random() * 2 ** 32) >>> 0), this.save);
     this.drinkIndex = 0;
     this.reports = [];
@@ -400,8 +404,8 @@ export class GameScene extends Phaser.Scene {
     const levelId = this.level?.id ?? '';
     const reports = this.reports;
     this.level = null;
-    this.game.events.emit('level-complete', { levelId, reports } satisfies LevelCompletePayload);
-    this.scene.start('boot');
+    this.game.events.emit('level-complete', { levelId, reports, masteryBefore: this.masteryBefore } satisfies LevelCompletePayload);
+    this.scene.stop();
   }
 
   // ---------- stations ----------
