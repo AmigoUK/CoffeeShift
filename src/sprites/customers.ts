@@ -1,0 +1,187 @@
+export interface SpriteData {
+  w: number;
+  h: number;
+  rows: string[];
+}
+
+/**
+ * Pixel sprites are code data: every character maps to a palette colour.
+ * '.' = transparent. Sprites are cosmetic — grading never depends on them.
+ */
+
+const regular1: SpriteData = {
+  w: 20, h: 22,
+  rows: [
+    '....................',
+    '......KKKKKKKK......',
+    '.....KKKKKKKKKK.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPKPPPPKPP.....',
+    '.....PPPPPPPPPP.....',
+    '......PPPPPPPP......',
+    '........PPPP........',
+    '.....LLLLLLLLLL.....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '.....LLLLLLLLLL.....',
+    '......LLLLLLLL......',
+    '......NNNNNNNN......',
+    '......NNN..NNN......',
+    '......NNN..NNN......',
+    '......NNN..NNN......',
+    '.....KKKK..KKKK.....',
+    '....................',
+  ],
+};
+
+const regular2: SpriteData = {
+  w: 20, h: 22,
+  rows: [
+    '....................',
+    '......KKKKKKKK......',
+    '.....KKKKKKKKKK.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPPPPPPPPP.....',
+    '......PPPPPPPP......',
+    '........PPPP........',
+    '.....LLLLLLLLLL.....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '....LLLLLLLLLLLL....',
+    '.....LLLLLLLLLL.....',
+    '......LLLLLLLL......',
+    '......NNNNNNNN......',
+    '......NNN..NNN......',
+    '......NNN..NNN......',
+    '......NNN..NNN......',
+    '.....KKKK..KKKK.....',
+    '....................',
+  ],
+};
+
+const student1: SpriteData = {
+  w: 20, h: 22,
+  rows: [
+    '....................',
+    '......HHHHHHHH......',
+    '.....HHHHHHHHHH.....',
+    '.....HPPPPPPPPH.....',
+    '.....PPKPPPPKPP.....',
+    '.....PPPPPPPPPP.....',
+    '......PPPPPPPP......',
+    '........PPPP........',
+    '.....GGGGGGGGGG.....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '.....GGGGGGGGGG.....',
+    '......GGGGGGGG......',
+    '......ssssssss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '.....KKKK..KKKK.....',
+    '....................',
+  ],
+};
+
+const student2: SpriteData = {
+  w: 20, h: 22,
+  rows: [
+    '....................',
+    '......HHHHHHHH......',
+    '.....HHHHHHHHHH.....',
+    '.....HPPPPPPPPH.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPPPPPPPPP.....',
+    '......PPPPPPPP......',
+    '........PPPP........',
+    '.....GGGGGGGGGG.....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '....GGGGGGGGGGGG....',
+    '.....GGGGGGGGGG.....',
+    '......GGGGGGGG......',
+    '......ssssssss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '.....KKKK..KKKK.....',
+    '....................',
+  ],
+};
+
+const commuter1: SpriteData = {
+  w: 20, h: 22,
+  rows: [
+    '....................',
+    '......BBBBBBBB......',
+    '.....BBBBBBBBBB.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPKPPPPKPP.....',
+    '.....PPPPPPPPPP.....',
+    '......PPPPPPPP......',
+    '........PPPP........',
+    '.....NNNNNNNNNN.....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '.....NNNNNNNNNN.....',
+    '......NNNNNNNN......',
+    '......ssssssss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '.....KKKK..KKKK.....',
+    '....................',
+  ],
+};
+
+const commuter2: SpriteData = {
+  w: 20, h: 22,
+  rows: [
+    '....................',
+    '......BBBBBBBB......',
+    '.....BBBBBBBBBB.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPPPPPPPPP.....',
+    '.....PPPPPPPPPP.....',
+    '......PPPPPPPP......',
+    '........PPPP........',
+    '.....NNNNNNNNNN.....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '....NNNNNNNNNNNN....',
+    '.....NNNNNNNNNN.....',
+    '......NNNNNNNN......',
+    '......ssssssss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '......sss..sss......',
+    '.....KKKK..KKKK.....',
+    '....................',
+  ],
+};
+
+export const CUSTOMER_SPRITES: Record<string, SpriteData> = {
+  'customer-regular-1': regular1,
+  'customer-regular-2': regular2,
+  'customer-student-1': student1,
+  'customer-student-2': student2,
+  'customer-commuter-1': commuter1,
+  'customer-commuter-2': commuter2,
+};

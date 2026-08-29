@@ -1,0 +1,142 @@
+import type { SpriteData } from './customers';
+
+const demitasse: SpriteData = {
+  w: 16, h: 16,
+  rows: [
+    '................',
+    '................',
+    '................',
+    '.....KKKK.......',
+    '....KKKKKK......',
+    '.....WWWW.......',
+    '.....WWWW.ss....',
+    '.....WWWW.ss....',
+    '.....WWWW.s....',
+    '....WWWWWW......',
+    '................',
+    '....CCCCCCC.....',
+    '...CCCCCCCC.....',
+    '................',
+    '................',
+    '................',
+  ],
+};
+
+const americanoMug: SpriteData = {
+  w: 16, h: 16,
+  rows: [
+    '................',
+    '................',
+    '...KKKKKKKK.....',
+    '...BBBBBBBB.....',
+    '...WWWWWWWW..ss.',
+    '...WWWWWWWW..ss.',
+    '...WWWWWWWW..ss.',
+    '...WWWWWWWW..ss.',
+    '...WWWWWWWW.s...',
+    '...WWWWWWWW.....',
+    '...WWWWWWWW.....',
+    '....WWWWWW......',
+    '....CCCCCC......',
+    '................',
+    '................',
+    '................',
+  ],
+};
+
+const cappuccinoCup: SpriteData = {
+  w: 16, h: 16,
+  rows: [
+    '................',
+    '................',
+    '...WWWWWWWW.....',
+    '..KKKKKKKKKK....',
+    '..WWWWWWWWWW.ss.',
+    '..WWWWWWWWWW.ss.',
+    '..WWWWWWWWWW.ss.',
+    '..WWWWWWWWWW.s..',
+    '...WWWWWWWW.....',
+    '....WWWWWW......',
+    '................',
+    '...CCCCCCCC.....',
+    '..CCCCCCCCCC....',
+    '................',
+    '................',
+    '................',
+  ],
+};
+
+const latteGlass: SpriteData = {
+  w: 16, h: 16,
+  rows: [
+    '................',
+    '...KKKKKKKK.....',
+    '...WWWWWWWW.....',
+    '...WWWWWWWW.....',
+    '...BBBBBBBB.....',
+    '...BBBBBBBB.....',
+    '...BBBBBBBB.....',
+    '...BBBBBBBB.....',
+    '...BBBBBBBB.....',
+    '...BBBBBBBB.....',
+    '....BBBBBB......',
+    '.....BBBB.......',
+    '....CCCCCC......',
+    '................',
+    '................',
+    '................',
+  ],
+};
+
+const flatWhiteCup: SpriteData = {
+  w: 16, h: 16,
+  rows: [
+    '................',
+    '................',
+    '...WWWWWWWW.....',
+    '..BBBBBBBBBB....',
+    '..WWWWWWWWWW.ss.',
+    '..WWWWWWWWWW.ss.',
+    '..WWWWWWWWWW.ss.',
+    '..WWWWWWWWWW.s..',
+    '...WWWWWWWW.....',
+    '...WWWWWWWW.....',
+    '....WWWWWW......',
+    '...CCCCCCCC.....',
+    '..CCCCCCCCCC....',
+    '................',
+    '................',
+    '................',
+  ],
+};
+
+const takeawayCup: SpriteData = {
+  w: 16, h: 16,
+  rows: [
+    '................',
+    '....ssssss......',
+    '....LLLLLL......',
+    '...CCCCCCCC.....',
+    '...CCCCCCCC.....',
+    '...CWWWWWWC.....',
+    '...CWWWWWWC.....',
+    '...CWWWWWWC.....',
+    '...CWWWWWWC.....',
+    '...CWWWWWWC.....',
+    '...CWWWWWWC.....',
+    '...CWWWWWWC.....',
+    '....CCCCCC......',
+    '................',
+    '................',
+    '................',
+  ],
+};
+
+export const VESSEL_SPRITES: Record<string, SpriteData> = {
+  'vessel-demitasse': demitasse,
+  'vessel-americano-mug': americanoMug,
+  'vessel-cappuccino-cup': cappuccinoCup,
+  'vessel-latte-glass': latteGlass,
+  'vessel-flat-white-cup': flatWhiteCup,
+  'vessel-takeaway-cup': takeawayCup,
+};
