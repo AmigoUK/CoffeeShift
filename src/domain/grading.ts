@@ -1,5 +1,5 @@
 import type { DrinkOrder, FeedbackId, PreparedDrink, ScoreReport, SizeId } from './types';
-import { MILK_TEMP, EXTRACTION, parSeconds } from './recipes';
+import { MILK_TEMP, EXTRACTION, parFor } from './recipes';
 import type { Recipe } from './recipes';
 import { FEEDBACK_HINTS, SUMMARY_CLAUSES, SUMMARY_OPENERS } from '../ui/copy';
 
@@ -54,9 +54,9 @@ function milkFailThreshold(order: DrinkOrder, milkType: string | null | undefine
   return milkType === 'oat' ? MILK_TEMP.oat.failAt : MILK_TEMP.dairy.failAt;
 }
 
-function timeScore(order: DrinkOrder, prepared: PreparedDrink, recipe: Recipe): number {
+function timeScore(order: DrinkOrder, prepared: PreparedDrink): number {
   if (!prepared.timedLevel) return 10;
-  const par = parSeconds(recipe.drink, order.takeaway);
+  const par = parFor(order);
   const t = prepared.elapsedSeconds;
   if (t <= par) return 10;
   if (t <= 2 * par) return roundHalfUp(10 - (8 * (t - par)) / par);
@@ -157,7 +157,7 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
     chk(tampOk ? 2 : 0, 2),
   ]);
 
-  const time = timeScore(order, prepared, drink);
+  const time = timeScore(order, prepared);
   const waste = wasteScore(prepared);
   const total = orderMatch + recipeScore + technique + time + waste;
 

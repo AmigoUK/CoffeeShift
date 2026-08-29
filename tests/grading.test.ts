@@ -125,20 +125,20 @@ describe('grading — time formula', () => {
     return run(order, makePrepared({ elapsedSeconds: elapsed, timedLevel: true })).breakdown.time;
   }
 
-  it('full marks at par (P=50) and below', () => {
-    expect(timeAt(50)).toBe(10);
+  it('full marks at par (P=49: 10 s slack + 1 shot + milk) and below', () => {
+    expect(timeAt(49)).toBe(10);
     expect(timeAt(30)).toBe(10);
   });
   it('linear decay between P and 2P', () => {
-    expect(timeAt(75)).toBe(6);   // 10 − 8×25/50
-    expect(timeAt(100)).toBe(2);  // boundary 2P
+    expect(timeAt(73.5)).toBe(6);   // 10 − 8×24.5/49 (half-way to 2P)
+    expect(timeAt(98)).toBe(2);    // boundary 2P
   });
   it('decay to zero at 4P', () => {
-    expect(timeAt(125)).toBe(2);  // 2 − 25/50 = 1.5 → rounds half-up to 2
-    expect(timeAt(130)).toBe(1);  // 2 − 30/50 = 1.4 → 1
-    expect(timeAt(150)).toBe(1);  // 2 − 50/50 = 1
-    expect(timeAt(200)).toBe(0);  // boundary 4P
-    expect(timeAt(400)).toBe(0);  // beyond 4P
+    expect(timeAt(122.5)).toBe(2); // 2 − 24.5/49 = 1.5 → rounds half-up to 2
+    expect(timeAt(127)).toBe(1);   // 2 − 29/49 = 1.41 → 1
+    expect(timeAt(147)).toBe(1);   // 2 − 49/49 = 1
+    expect(timeAt(196)).toBe(0);   // boundary 4P
+    expect(timeAt(400)).toBe(0);   // beyond 4P
   });
   it('untimed levels always score full marks', () => {
     const untimed = run(order, makePrepared({ elapsedSeconds: 9999, timedLevel: false }));

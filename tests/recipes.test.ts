@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRINK_IDS, RECIPES, defaultShots, parSeconds } from '../src/domain/recipes';
+import { DRINK_IDS, RECIPES, defaultShots, parFor } from '../src/domain/recipes';
 
 describe('recipes data invariants', () => {
   it('every drink has a unique house vessel', () => {
@@ -35,12 +35,20 @@ describe('recipes data invariants', () => {
     expect(defaultShots('latte', 'large')).toBe(3);
   });
 
-  it('par times are defined for every drink', () => {
+  it('pars are derived from the work an order needs', () => {
+    // flat-white: 2 shots + milk — old flat par of 45 s was unreachable (min real ~68 s)
+    expect(parFor({ drink: 'flat-white', shots: 2, takeaway: false })).toBe(76);
+    expect(parFor({ drink: 'espresso', shots: 1, takeaway: false })).toBe(37);
+    // americano medium: 2 shots + water
+    expect(parFor({ drink: 'americano', shots: 2, takeaway: false })).toBe(70);
+    // takeaway adds 5 s
+    expect(parFor({ drink: 'espresso', shots: 1, takeaway: true })).toBe(42);
     for (const drink of DRINK_IDS) {
-      expect(RECIPES[drink].parSeconds).toBeGreaterThan(0);
+      const recipe = RECIPES[drink];
+      for (const size of recipe.allowedSizes) {
+        expect(parFor({ drink, shots: defaultShots(drink, size), takeaway: false })).toBeGreaterThan(0);
+      }
     }
-    expect(parSeconds('latte', true)).toBe(55);
-    expect(parSeconds('espresso', false)).toBe(25);
   });
 
   it('milk volumes are defined for milk drinks, water for americano', () => {

@@ -79,7 +79,8 @@ export class GameScene extends Phaser.Scene {
   private save: SaveData = loadSave();
   private orders: DrinkOrder[] = [];
   private drinkIndex = 0;
-  private orderStartTime = 0;
+  private orderStartClock = 0;
+  private clockGame = 0;   // capped-dt game seconds: stalls on weak hardware must not eat timers
   private orderChanged = false;
   private transitioning = false;
   private wasteEvents: string[] = [];
@@ -130,6 +131,9 @@ export class GameScene extends Phaser.Scene {
       fontSize: '12px', color: '#2f8f83', align: 'center', wordWrap: { width: 370 }, fontStyle: 'bold',
     }).setOrigin(0.5, 0);
     this.startDrink();
+    if (level.parallelPrep) {
+      this.time.delayedCall(1500, () => this.toast(GAME_COPY.parallelTip));
+    }
   }
 
   // ---------- top band ----------
@@ -152,8 +156,18 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.add.text(340, 135, '', { fontSize: '11px', color: '#7a6a5c' }).setOrigin(0.5).setName('queue-label');
+    // Patience is never colour-only: icon + label travel with the bar.
+    this.add.text(15, 246, '\u23F1 Patience', { fontSize: '9px', color: '#7a6a5c' });
     this.add.rectangle(195, 258, 360, 6, 0xe7dcc9);
     this.patienceBar = this.add.rectangle(15, 258, 360, 6, COL.teal).setOrigin(0, 0.5).setName('patience-bar');
+
+    const exit = this.add.text(378, 14, '\u2630 Menu', {
+      fontSize: '12px', color: '#fdf6ec', backgroundColor: '#6f4e37', padding: { x: 8, y: 5 },
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    exit.on('pointerdown', () => {
+      this.game.events.emit('exit-level');
+      this.scene.stop();
+    });
   }
 
   private buildStationTabs(): void {
@@ -260,7 +274,7 @@ export class GameScene extends Phaser.Scene {
     this.wasteEvents = [];
     this.orderChanged = false;
     this.transitioning = false;
-    this.orderStartTime = this.time.now;
+    this.orderStartClock = this.clockGame;
     this.renderOrder();
     this.switchStation('espresso');
   }
@@ -368,7 +382,7 @@ export class GameScene extends Phaser.Scene {
       waterMl: this.asm.waterMl,
       assemblyActions: this.asm.actions,
       wasteEvents: this.wasteEvents,
-      elapsedSeconds: Math.max(0, (this.time.now - this.orderStartTime) / 1000),
+      elapsedSeconds: Math.max(0, this.clockGame - this.orderStartClock),
       timedLevel: this.level?.timeScoring ?? false,
     };
   }
@@ -433,6 +447,12 @@ export class GameScene extends Phaser.Scene {
   private renderExtraction(): void {
     this.stationView?.add(this.add.image(100, 450, 'machine').setScale(3));
     this.stationView?.add(this.add.image(295, 465, 'grinder').setScale(3));
+    // Espresso streams under the two group heads — visible feedback while brewing.
+    for (const x of [76, 124]) {
+      const stream = this.add.rectangle(x, 462, 5, 34, 0x3b2417).setOrigin(0.5, 0).setName(`brew-stream-${x}`);
+      stream.setVisible(false);
+      this.stationView?.add(stream);
+    }
     this.statusLine('ext-status');
 
     const grinds: ('fine' | 'medium' | 'coarse')[] = ['fine', 'medium', 'coarse'];
@@ -447,6 +467,7 @@ export class GameScene extends Phaser.Scene {
       if (!this.ext.tampHeld) return;
       this.ext.tampHeld = false;
       this.ext.tampGood = this.ext.tampPeakKg >= EXTRACTION.tampBandKg[0] && this.ext.tampPeakKg <= EXTRACTION.tampBandKg[1];
+      this.buzz(this.ext.tampGood ? 25 : 0);
       this.ext.tampKg = 0;
       this.ext.tampPeakKg = 0;
     }));
@@ -687,17 +708,26 @@ export class GameScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const order = this.currentDrink();
+    const dt = Math.min(delta, 250) / 1000;
+    this.clockGame += dt;
+
     if (order == null || this.feedbackCard != null || this.transitioning || this.level == null) return;
-    const dt = delta / 1000;
 
     if (this.ext.tampHeld) {
-      this.ext.tampKg = Math.min(25, this.ext.tampKg + 14 * dt);
+      this.ext.tampKg = Math.min(25, this.ext.tampKg + EXTRACTION.tampRampKgPerS * dt);
       this.ext.tampPeakKg = Math.max(this.ext.tampPeakKg, this.ext.tampKg);
     }
     if (this.ext.brewing) {
       this.ext.brewSeconds += dt;
       const doseFactor = 1 + 0.075 * (18 - this.ext.doseGrams);
       this.ext.yieldGrams += 1.2 * (GRIND_FACTOR[this.ext.grind] ?? 1) * doseFactor * dt;
+    }
+
+    for (const x of [76, 124]) {
+      const stream = this.children.getByName(`brew-stream-${x}`) as Phaser.GameObjects.Rectangle | null;
+      if (stream == null) continue;
+      stream.setVisible(this.ext.brewing);
+      stream.alpha = this.save.settings.reduceAnimations ? 1 : 0.55 + 0.3 * Math.sin(this.clockGame * 9);
     }
 
     if (this.milk.filling) {
@@ -731,7 +761,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.level.patience && this.patienceBar != null) {
-      const remaining = 1 - (this.time.now - this.orderStartTime) / (this.level.patienceSeconds * 1000);
+      const remaining = 1 - (this.clockGame - this.orderStartClock) / this.level.patienceSeconds;
       if (remaining <= 0) {
         this.loseCustomer();
         return;
@@ -741,7 +771,7 @@ export class GameScene extends Phaser.Scene {
     }
 
 
-    if (this.level.orderChanges && !this.orderChanged && this.time.now - this.orderStartTime > 5000) {
+    if (this.level.orderChanges && !this.orderChanged && this.clockGame - this.orderStartClock > 5) {
       this.changeOrder();
     }
   }

@@ -43,6 +43,10 @@ game.events.on('level-complete', (payload: LevelCompletePayload) => {
   });
 });
 
+game.events.on('exit-level', () => {
+  show('menu');
+});
+
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
   setInstallPrompt(event as unknown as { prompt: () => Promise<void> });

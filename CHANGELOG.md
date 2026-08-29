@@ -4,7 +4,19 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- Par times are now derived from each order's work (shots \u00d7 27 s + milk + water + takeaway + slack) instead of a flat per-drink table; multi-shot drinks were mathematically unable to finish inside the old pars, capping time scores and blocking 3 stars.
+- Tamp ramp slowed from 14 to 8 kg/s: the 15\u201320 kg release window is now 0.625 s instead of 0.36 s, making it releasable on touch.
+- All in-game timers (patience, elapsed time scoring, order changes) run on a capped-delta game clock, so frame drops and main-thread stalls on weak hardware no longer eat customer patience or tank grades.
+- Haptic buzz when the tamp releases inside the band.
+
+### Added
+- In-game Menu button to leave a level mid-shift.
+- Patience bar now carries an icon and label (no colour-only signalling).
+- Animated espresso streams under the group heads while brewing (respects Reduce animations).
+- S7+ tip toast announcing parallel prep (steam while extracting).
+- Recipe Book shows per-size par ranges derived from the new formula.
+
 
 ## [0.1.1] — 2026-08-29
 

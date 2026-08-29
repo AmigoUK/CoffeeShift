@@ -34,6 +34,7 @@ export const EXTRACTION = {
   doseTargetGrams: 18,
   doseBandGrams: [16, 20] as [number, number],
   tampBandKg: [15, 20] as [number, number],
+  tampRampKgPerS: 8, // 15-20 kg in 0.625 s of hold — a touch-releasable window
   timeBandSeconds: [24, 31] as [number, number],
 };
 
@@ -97,8 +98,20 @@ export function resolveShots(drink: DrinkId, size: SizeId, extraShot: boolean): 
   return Math.min(MODIFIER_LIMITS.maxShots, defaultShots(drink, size) + (extraShot ? MODIFIER_LIMITS.extraShotStep : 0));
 }
 
-export function parSeconds(drink: DrinkId, takeaway: boolean): number {
-  return RECIPES[drink].parSeconds + (takeaway ? TAKEAWAY_EXTRA_SECONDS : 0);
+/**
+ * Par time for a concrete order, derived from the work it actually needs:
+ * shots are sequential 24-31 s each, milk steams alongside, water pours quickly.
+ * Flat per-drink pars made multi-shot drinks impossible to finish in par.
+ */
+export const PAR = { slackSeconds: 10, perShotSeconds: 27, milkSeconds: 12, waterSeconds: 6 };
+
+export function parFor(order: { drink: DrinkId; shots: number; takeaway: boolean }): number {
+  const recipe = RECIPES[order.drink];
+  return PAR.slackSeconds
+    + order.shots * PAR.perShotSeconds
+    + (recipe.milkDrink ? PAR.milkSeconds : 0)
+    + (order.drink === 'americano' ? PAR.waterSeconds : 0)
+    + (order.takeaway ? TAKEAWAY_EXTRA_SECONDS : 0);
 }
 
 export function isMilkDrink(drink: DrinkId): boolean {

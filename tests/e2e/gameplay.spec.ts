@@ -31,9 +31,9 @@ async function pullGoodShot(page: Page): Promise<void> {
   for (let i = 0; i < 4; i++) await tap(page, DOSE[0], DOSE[1]);
   let tampGood = false;
   for (let attempt = 0; attempt < 5 && !tampGood; attempt++) {
-    // Fixed 1250 ms hold ≈ 17.5 kg (ramp 14 kg/s): safely mid-band even with event jitter.
-    // Predicate-driven release is unusable here — evaluate latency (~0.45 s) overshoots the band.
-    await hold(page, TAMP[0], TAMP[1], 1250);
+    // Fixed 2200 ms hold ≈ 17.6 kg (ramp 8 kg/s): mid-band even with event jitter.
+    // Predicate-driven release is unusable here — evaluate latency overshoots the band.
+    await hold(page, TAMP[0], TAMP[1], 2200);
     tampGood = (await sceneSatisfies(page, () => true)).ext.tampGood;
   }
   if (!tampGood) throw new Error('could not land a tamp inside the 15-20 kg band');

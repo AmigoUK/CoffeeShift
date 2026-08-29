@@ -105,6 +105,7 @@ export const GAME_COPY = {
   levelComplete: 'Shift complete!',
   learnComplete: 'Lesson complete!',
   perfectServe: 'Perfect serve!',
+  parallelTip: 'Tip: steam milk while the shots run \u2014 parallel prep is allowed from now on.',
 } as const;
 
 export const RECIPE_BOOK_COPY = {

@@ -2,7 +2,7 @@ import { APP_NAME, FEEDBACK_LABELS, GAME_COPY, MENU, MODE_COPY, RECIPE_BOOK_COPY
 import { renderFooter } from './footer';
 import type { SaveData } from '../domain/save';
 import { defaultSave, loadSave, savePersistence, writeSave } from '../domain/save';
-import { DRINK_IDS, EXTRACTION, MILK_TEMP, RECIPES } from '../domain/recipes';
+import { DRINK_IDS, EXTRACTION, MILK_TEMP, RECIPES, parFor } from '../domain/recipes';
 import type { DrinkId } from '../domain/types';
 import { LEVELS, levelById, levelsForMode } from '../domain/levels';
 import {
@@ -196,6 +196,16 @@ function wireResetConfirm(row: HTMLElement): void {
 
 // ---- Recipe Book ----
 
+function parRange(drink: DrinkId): string {
+  const c = RECIPE_BOOK_COPY;
+  const recipe = RECIPES[drink];
+  const pars = recipe.allowedSizes.map((size) =>
+    parFor({ drink, shots: recipe.defaultShots[size] ?? 1, takeaway: false }));
+  const min = Math.min(...pars);
+  const max = Math.max(...pars);
+  return min === max ? `${min}${c.seconds}` : `${min}\u2013${max}${c.seconds}`;
+}
+
 function recipeCard(drink: DrinkId): string {
   const r = RECIPES[drink];
   const c = RECIPE_BOOK_COPY;
@@ -209,6 +219,7 @@ function recipeCard(drink: DrinkId): string {
     ? Object.entries(r.waterVolumeMl).map(([size, ml]) => `${GAME_COPY[size as keyof typeof GAME_COPY] ?? size} ${ml}${c.ml}`).join(' \u00b7 ')
     : '\u2014';
   const foam = r.foamBandCm != null ? `${r.foamBandCm[0]}\u2013${r.foamBandCm[1]}${c.cm}` : '\u2014';
+
   return `
     <div class="recipe-card">
       <h3>${r.name}</h3>
@@ -218,7 +229,7 @@ function recipeCard(drink: DrinkId): string {
         <dt>${c.milk}</dt><dd>${milkList}</dd>
         <dt>${c.water}</dt><dd>${waterList}</dd>
         <dt>${c.foam}</dt><dd>${foam}</dd>
-        <dt>${c.parTime}</dt><dd>${r.parSeconds}${c.seconds}</dd>
+        <dt>${c.parTime}</dt><dd>${parRange(drink)}</dd>
       </dl>
     </div>`;
 }
