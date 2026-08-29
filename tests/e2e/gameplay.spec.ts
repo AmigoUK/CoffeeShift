@@ -3,19 +3,19 @@ import type { Page } from '@playwright/test';
 import { activeScene, callHook, hold, holdUntil, hookData, sceneSatisfies, tap, waitForBoot } from './helpers';
 
 // Button positions in 390x844 game coordinates.
-const DOSE = [65, 738] as const;
-const TAMP = [195, 738] as const;
-const BREW = [325, 738] as const;
+const DOSE = [65, 712] as const;
+const TAMP = [195, 712] as const;
+const BREW = [325, 712] as const;
 const TAB_MILK = [195, 290] as const;
 const TAB_ASSEMBLY = [325, 290] as const;
-const LARGE_JUG = [195, 680] as const;
-const FILL = [65, 738] as const;
-const PURGE = [195, 738] as const;
-const STEAM = [325, 738] as const;
+const LARGE_JUG = [195, 655] as const;
+const FILL = [65, 712] as const;
+const PURGE = [195, 712] as const;
+const STEAM = [325, 712] as const;
 const DEMITASSE = [65, 655] as const;
 const LATTE_GLASS = [65, 711] as const;
-const ADD_ESPRESSO = [65, 770] as const;
-const POUR_MILK = [325, 770] as const;
+const ADD_ESPRESSO = [65, 764] as const;
+const POUR_MILK = [325, 764] as const;
 const SERVE = [320, 812] as const;
 const FEEDBACK_NEXT = [195, 640] as const;
 

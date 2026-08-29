@@ -24,5 +24,7 @@ export default defineConfig({
     }),
   ],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  preview: { allowedHosts: ['linuxserv1.tailc29352.ts.net'] },
+  server: { host: true, port: 5173 },
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 });

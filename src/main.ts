@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BootScene } from './game/BootScene';
+import { setTimeScale } from './game/timeScale';
 import { GameScene } from './game/GameScene';
 import type { LevelCompletePayload } from './game/GameScene';
 import { setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
@@ -67,6 +68,7 @@ if (import.meta.env.DEV) {
     lastReport: null as unknown,
     canvasRect: () => document.querySelector('#game-canvas canvas')?.getBoundingClientRect().toJSON() ?? null,
     activeScene: () => game.scene.getScene('game'),
+    setTimeScale,
   };
   (window as unknown as Record<string, unknown>).__COFFEE_SHIFT = hook;
   game.events.on('served', (report: unknown) => { hook.lastReport = report; });

@@ -10,13 +10,20 @@ All notable changes to **Coffee Shift** are documented in this file.
 - All in-game timers (patience, elapsed time scoring, order changes) run on a capped-delta game clock, so frame drops and main-thread stalls on weak hardware no longer eat customer patience or tank grades.
 - Haptic buzz when the tamp releases inside the band.
 
-### Added
-- In-game Menu button to leave a level mid-shift.
-- Patience bar now carries an icon and label (no colour-only signalling).
-- Animated espresso streams under the group heads while brewing (respects Reduce animations).
-- S7+ tip toast announcing parallel prep (steam while extracting).
-- Recipe Book shows per-size par ranges derived from the new formula.
 
+### Fixed
+- Station control rows overlapped the persistent Undo/Bin/Serve bar: taps on Wand depth or
+  Empty grinder hit Bin & restart (silently wasting the drink), and row-3 actions grazed Serve.
+  All stations re-laid out on a non-overlapping grid (rows 655/712/764, bottom bar 788-836).
+
+### Changed (balance, from the playthrough bot)
+- Patience floor: customers now wait at least par × 1.2 — S6-style 3-shot orders exceeded flat
+  level patience on brewing time alone and were unwinnable.
+- Order changes (S8+) fire on ~half of eligible orders, once, between 8-15 s — previously every
+  order changed at a fixed 5 s, forcing a full redo of every drink.
+- Milk foam rate 0.09 → 0.14 cm/s: cappuccino's 2.0 cm foam needed 22 s of steaming, which
+  scorched the milk; depth-switching (shallow → deep) is now the taught technique per drink.
+- Station tabs no longer re-render when the active tab is tapped.
 
 ## [0.1.1] — 2026-08-29
 
