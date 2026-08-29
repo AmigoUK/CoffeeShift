@@ -28,7 +28,7 @@ function learnLevel(drink: DrinkId, index: number): LevelDef {
   const recipe = RECIPES[drink];
   return {
     id: `L${index + 1}`, mode: 'learn', drinkPool: [drink],
-    sizes: [...recipe.allowedSizes], milks: ['whole'],
+    sizes: [recipe.allowedSizes[0] as SizeId], milks: ['whole'],
     ...NONE,
     orderCount: 1, queueLength: 1,
     patience: false, patienceSeconds: 0, timeScoring: false,

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './game/BootScene';
 import { setInstallPrompt, setStartLevelHandler, show } from './ui/screens';
-import './style.css';
+import { GameScene } from './game/GameScene';
 import { loadSave } from './domain/save';
 
 const game = new Phaser.Game({
@@ -15,11 +15,20 @@ const game = new Phaser.Game({
     width: 390,
     height: 844,
   },
-  scene: [BootScene],
+  scene: [BootScene, GameScene],
 });
 
 setStartLevelHandler((levelId) => {
   game.events.emit('start-level', levelId);
+});
+
+game.events.on('start-level', (levelId: string) => {
+  show('game');
+  game.scene.start('game', { levelId });
+});
+
+game.events.on('level-complete', () => {
+  show('menu');
 });
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -34,12 +43,17 @@ game.events.on('boot-ready', () => {
 
 if (import.meta.env.DEV) {
   // Dev-only verification hook: lets browser tests observe boot and textures.
-  (window as unknown as Record<string, unknown>).__COFFEE_SHIFT = {
+  const hook: Record<string, unknown> = {
     game,
     startLevel: (levelId: string) => game.events.emit('start-level', levelId),
     textureKeys: () => ['machine', 'grinder', 'wand', 'jug-small', 'jug-large', 'counter', 'menu-board', 'customer-regular-1', 'vessel-demitasse', 'icon-star']
       .filter((k) => game.textures.exists(k)),
+    lastReport: null as unknown,
+    canvasRect: () => document.querySelector('#game-canvas canvas')?.getBoundingClientRect().toJSON() ?? null,
+    activeScene: () => game.scene.getScene('game'),
   };
+  (window as unknown as Record<string, unknown>).__COFFEE_SHIFT = hook;
+  game.events.on('served', (report: unknown) => { hook.lastReport = report; });
   game.events.on('boot-ready', () => {
     ((window as unknown as Record<string, unknown>).__COFFEE_SHIFT as Record<string, unknown>).booted = true;
   });
