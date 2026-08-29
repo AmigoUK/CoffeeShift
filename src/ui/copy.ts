@@ -125,3 +125,22 @@ export const FOOTER_COPY = {
   github: 'GitHub',
   githubUrl: 'https://github.com/AmigoUK/coffeshift',
 } as const;
+
+export const VESSEL_LABELS: Record<string, string> = {
+  demitasse: 'Demitasse',
+  'americano-mug': 'Americano mug',
+  'cappuccino-cup': 'Cappuccino cup',
+  'latte-glass': 'Latte glass',
+  'flat-white-cup': 'Flat white cup',
+  'takeaway-cup': 'Takeaway cup',
+};
+
+export const MODE_COPY = {
+  learn: { name: 'Learn', blurb: 'Guided lessons, one drink at a time.' },
+  practice: { name: 'Practise', blurb: 'Free play with modifiers, no timers.' },
+  shift: { name: 'Shift', blurb: 'Serve a full caf\u00e9 queue under pressure.' },
+  locked: 'Locked',
+  levelsComplete: 'levels complete',
+  starsEarned: 'stars earned',
+  rank: 'Rank',
+} as const;

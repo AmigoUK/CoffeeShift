@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import pkg from './package.json' with { type: 'json' };
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
@@ -18,6 +19,6 @@ export default defineConfig({
       },
     }),
   ],
-  server: { host: true, port: 5173 },
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 });
