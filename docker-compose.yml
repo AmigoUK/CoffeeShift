@@ -1,0 +1,11 @@
+name: coffeeshift
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: coffeeshift-web
+    restart: unless-stopped
+    ports:
+      - "4180:80"

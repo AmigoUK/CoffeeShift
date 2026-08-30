@@ -23,7 +23,8 @@ All notable changes to **Coffee Shift** are documented in this file.
   order changed at a fixed 5 s, forcing a full redo of every drink.
 - Milk foam rate 0.09 → 0.14 cm/s: cappuccino's 2.0 cm foam needed 22 s of steaming, which
   scorched the milk; depth-switching (shallow → deep) is now the taught technique per drink.
-- Station tabs no longer re-render when the active tab is tapped.
+- Docker deployment: multi-stage build (node:22-alpine → nginx:alpine) with SPA fallback,
+  immutable asset caching and no-cache service worker; `docker compose up -d` serves port 4180.
 
 ## [0.1.1] — 2026-08-29
 
