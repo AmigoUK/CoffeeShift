@@ -17,7 +17,7 @@ test.describe('DOM shell', () => {
     await expect(footer).toContainText('GitHub');
     await expect(footer.locator('a[href="mailto:dev@attv.uk"]')).toHaveCount(1);
     await expect(footer.locator('a[href="https://www.attv.uk"]')).toHaveCount(1);
-    await expect(footer.locator('a[href="https://github.com/AmigoUK/coffeshift"]')).toHaveCount(1);
+    await expect(footer.locator('a[href="https://github.com/AmigoUK/CoffeeShift"]')).toHaveCount(1);
   });
 
   test('mode select locks Practise and Shift until Learn is done', async ({ page }) => {

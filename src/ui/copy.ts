@@ -124,7 +124,7 @@ export const FOOTER_COPY = {
   site: 'www.attv.uk',
   siteUrl: 'https://www.attv.uk',
   github: 'GitHub',
-  githubUrl: 'https://github.com/AmigoUK/coffeshift',
+  githubUrl: 'https://github.com/AmigoUK/CoffeeShift',
 } as const;
 
 export const VESSEL_LABELS: Record<string, string> = {
