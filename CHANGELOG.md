@@ -6,6 +6,30 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 _Nothing yet._
 
+## [0.2.1] — 2026-08-31
+
+### Fixed
+- Multi-drink tickets anchored line 1 to `orders[0]` instead of the pair being worked on.
+  From the second pair onwards the player saw the drink from two orders ago, marked as
+  already served, while the drink they actually had to make appeared nowhere on the ticket.
+  An odd order count also produced a phantom second drink on the last pair.
+- The queue counter halved the customers on multi-drink levels: `generateOrders` ignores the
+  `multiDrink` flag, so each order has its own customer, its own patience and its own
+  lost-customer path — but the counter showed 4 people for 7 orders. Customer archetypes now
+  also change per order rather than per pair.
+- `docker/nginx.conf` sent no `Cache-Control` on `index.html`, despite the rule above it
+  claiming the entry point always revalidates. Browsers cached the HTML heuristically, so
+  returning visitors kept getting the pre-0.2.0 page — which predates the stylesheet import
+  and therefore rendered as a bare background.
+
+### Changed
+- `docs/STATUS.md` rewritten. It previously recorded "S9 multi-drink 41%" as a broken level;
+  that was an artefact of the measurement tool, not the game. The playthrough bot adds
+  ~0.2-0.5 s of latency per state read and `SCALE` multiplies it along with the game clock
+  until it eats the 12-16 s of slack a level normally leaves, so the customer expires
+  mid-steam. At `SCALE=1` the same level scores 99% with no customers lost. The handoff now
+  warns against judging balance from `SCALE>1` runs.
+
 ## [0.2.0] — 2026-08-31
 
 ### Fixed
@@ -81,7 +105,8 @@ _Nothing yet._
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.0.1...v0.1.0
