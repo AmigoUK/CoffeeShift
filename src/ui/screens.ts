@@ -36,6 +36,13 @@ let selectedMode: Mode = 'learn';
 let startLevelHandler: ((levelId: string) => void) | null = null;
 let installPrompt: { prompt: () => Promise<void> } | null = null;
 let summaryData: LevelSummaryData | null = null;
+let currentScreenId: ScreenId = 'menu';
+let exitGameHandler: (() => void) | null = null;
+
+/** Lets main.ts stop the Phaser scene when Back is pressed during play. */
+export function setExitGameHandler(handler: () => void): void {
+  exitGameHandler = handler;
+}
 
 
 
@@ -51,9 +58,16 @@ export function currentSave(): SaveData {
   return save;
 }
 
-export function show(id: ScreenId): void {
+export function show(id: ScreenId, options: { fromHistory?: boolean } = {}): void {
   const overlay = document.getElementById('overlay');
   if (overlay == null) return;
+  const previous = currentScreenId;
+  currentScreenId = id;
+  // Android's hardware Back unloads the page when there is nothing on the history stack,
+  // dropping the player straight out of the game. Give it somewhere to go.
+  if (options.fromHistory !== true && id !== previous) {
+    history.pushState({ screen: id }, '');
+  }
   if (id === 'game') {
     overlay.hidden = true;
     return;
@@ -69,6 +83,13 @@ export function show(id: ScreenId): void {
   screen.innerHTML = renderScreen(id);
   overlay.appendChild(screen);
   wireScreen(id, screen);
+  // After replacing the screen the focus would otherwise fall back to <body>, leaving
+  // keyboard and screen-reader users with no position on the page.
+  const heading = screen.querySelector('.screen__title');
+  if (heading instanceof HTMLElement) {
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+  }
 }
 
 function shell(title: string, body: string, subtitle = ''): string {
@@ -361,3 +382,13 @@ function wireScreen(id: ScreenId, screen: HTMLElement): void {
     bind('set-reduce', 'reduceAnimations');
   }
 }
+
+window.addEventListener('popstate', (event) => {
+  const state = event.state as { screen?: ScreenId } | null;
+  if (currentScreenId === 'game') {
+    // Leaving a level needs the scene stopped, not just the overlay swapped.
+    exitGameHandler?.();
+    return;
+  }
+  show(state?.screen ?? 'menu', { fromHistory: true });
+});

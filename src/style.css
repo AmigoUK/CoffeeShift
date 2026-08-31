@@ -159,7 +159,7 @@ body {
 
 .level-card[disabled] { opacity: 0.45; cursor: not-allowed; }
 
-.stars { color: #d4a017; letter-spacing: 2px; }
+.stars { color: #8c6008; letter-spacing: 2px; }
 .stars--locked { color: var(--text-muted); }
 
 .lock { font-size: 1rem; color: var(--text-muted); }
@@ -220,11 +220,11 @@ body {
   padding-top: 16px;
   text-align: center;
   font-size: 11px;
-  color: #8a7a6a;
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
-.app-footer a { color: #8a7a6a; text-decoration: none; }
+.app-footer a { color: var(--text-muted); text-decoration: none; }
 .app-footer a:hover { color: var(--coffee); }
 .app-footer .dot { margin: 0 4px; color: #c5b8a8; }
 
@@ -279,3 +279,18 @@ body {
   margin: 0;
   line-height: 1.5;
 }
+
+/* Visible to assistive technology only: the canvas cannot announce anything itself. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.screen__title:focus { outline: 2px solid var(--coffee); outline-offset: 4px; }

@@ -74,6 +74,7 @@ export const MENU = {
   serve: 'Serve',
   undo: 'Undo',
   bin: 'Bin & restart',
+  binConfirm: 'Tap again to bin',
   ok: 'OK',
   confirm: 'Confirm',
   cancel: 'Cancel',
@@ -91,6 +92,9 @@ export const SETTINGS_COPY = {
 } as const;
 
 export const GAME_COPY = {
+  canvasLabel: 'Coffee Shift play area. The espresso, milk and assembly stations are drawn here and operated by touch.',
+  binArmed: 'Tap Bin again to throw this drink away.',
+  binned: 'Drink binned \u2014 starting fresh.',
   ticket: 'Ticket',
   drink: 'Drink', size: 'Size', shots: 'Shots', milk: 'Milk', temperature: 'Temperature',
   takeaway: 'To take away', extraHot: 'Extra hot', inHouse: 'In house',

@@ -4,8 +4,9 @@ import { BootScene } from './game/BootScene';
 import { setTimeScale } from './game/timeScale';
 import { GameScene } from './game/GameScene';
 import type { LevelCompletePayload } from './game/GameScene';
-import { setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
-import { BOOT_ERROR_COPY } from './ui/copy';
+import { setExitGameHandler, setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
+import { BOOT_ERROR_COPY, GAME_COPY } from './ui/copy';
+import * as layout from './game/layout';
 import { loadSave, writeSave } from './domain/save';
 import { applyLevelResult, habitHints } from './domain/progression';
 
@@ -76,6 +77,11 @@ game.events.on('exit-level', () => {
   show('menu');
 });
 
+setExitGameHandler(() => {
+  game.scene.stop('game');
+  show('menu', { fromHistory: true });
+});
+
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
   setInstallPrompt(event as unknown as { prompt: () => Promise<void> });
@@ -83,6 +89,9 @@ window.addEventListener('beforeinstallprompt', (event) => {
 
 game.events.on('boot-ready', () => {
   loadSave();
+  // The canvas is opaque to assistive technology; at least say what it is.
+  game.canvas?.setAttribute('role', 'img');
+  game.canvas?.setAttribute('aria-label', GAME_COPY.canvasLabel);
   show('menu');
 });
 
@@ -96,6 +105,7 @@ if (import.meta.env.DEV) {
     lastReport: null as unknown,
     canvasRect: () => document.querySelector('#game-canvas canvas')?.getBoundingClientRect().toJSON() ?? null,
     activeScene: () => game.scene.getScene('game'),
+    layout: () => ({ ...layout }),
     setTimeScale,
   };
   (window as unknown as Record<string, unknown>).__COFFEE_SHIFT = hook;
