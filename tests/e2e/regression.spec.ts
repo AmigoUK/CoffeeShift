@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { callHook, sceneSatisfies, tap, waitForBoot } from './helpers';
+import { callHook, canvasScale, sceneSatisfies, tap, waitForBoot } from './helpers';
 
 // Button positions in 390x844 game coordinates.
 const DOSE = [65, 712] as const;
@@ -34,6 +34,96 @@ test.describe('regressions', () => {
     await page.goto('/');
     await waitForBoot(page);
     await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+  });
+
+  test('a hostile mastery key from storage is not rendered as HTML', async ({ page }) => {
+    // The summary falls back to the raw key when it is not a known drink, and that key comes
+    // straight out of localStorage. Anything with page access could plant markup there.
+    await page.evaluate(() => {
+      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
+        version: 1,
+        settings: { sound: false, vibration: false, reduceAnimations: true },
+        progress: { learn: [], practice: [], shift: [] },
+        rank: 'trainee',
+        mastery: { 'drink:<img src=x onerror="window.__pwned=1">': 50 },
+        errorTagCounts: {},
+        stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
+      }));
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT as { game: { events: { emit: (n: string, p: unknown) => void } } };
+      hook.game.events.emit('level-complete', { levelId: 'L1', reports: [], masteryBefore: {} });
+    });
+    await page.waitForTimeout(600);
+
+    const result = await page.evaluate(() => ({
+      pwned: (window as unknown as Record<string, unknown>).__pwned ?? null,
+      injectedNodes: document.querySelectorAll('#overlay img').length,
+      shownLiterally: document.getElementById('overlay')?.textContent?.includes('<img src=x') ?? false,
+    }));
+
+    expect(result.pwned).toBeNull();
+    expect(result.injectedNodes).toBe(0);
+    expect(result.shownLiterally).toBe(true);
+  });
+
+  test('changing a setting keeps progress written by the game', async ({ page }) => {
+    // screens.ts caches the save at module load. The game writes its own copy after every
+    // serve, so a setting toggled afterwards used to write the stale cache back and wipe it.
+    await page.evaluate(() => {
+      // A complete save: loadSave() rejects anything without version === 1, so a partial
+      // object here would be replaced by defaults and prove nothing.
+      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
+        version: 1,
+        settings: { sound: true, vibration: true, reduceAnimations: false },
+        progress: { learn: [96, 0, 0, 0, 0], practice: [], shift: [] },
+        rank: 'trainee',
+        mastery: { 'drink:latte': 88 },
+        errorTagCounts: {},
+        stats: { drinksServed: 4, perfectOrders: 2, shiftsPlayed: 1 },
+      }));
+    });
+
+    await page.click('[data-action="settings"]');
+    await page.locator('#set-sound').click();
+    await page.waitForTimeout(300);
+
+    const after = await page.evaluate(() => {
+      const raw = localStorage.getItem('coffee-shift.save.v1');
+      return raw != null ? JSON.parse(raw) : null;
+    });
+    expect(after?.mastery?.['drink:latte']).toBe(88);
+    expect(after?.stats?.drinksServed).toBe(4);
+  });
+
+  test('switching station mid-hold does not leave the milk pouring for ever', async ({ page }) => {
+    await startLevel(page, 'L3');
+    await tap(page, 195, 290);        // milk station
+    await tap(page, 195, 655);        // large jug
+
+    // Start pouring and let some milk in.
+    const { left, top, sx, sy } = await canvasScale(page);
+    await page.mouse.move(left + 65 * sx, top + 712 * sy);
+    await page.mouse.down();
+    await sceneSatisfies(page, (s2) => s2.milk.fillMl > 10, 10_000);
+
+    // The controls are destroyed under the finger — the button can no longer emit
+    // pointerup, so the scene has to clear the flag itself.
+    await page.evaluate(() => {
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT as { game: { scene: { getScene: (k: string) => unknown } } };
+      const scene = hook.game.scene.getScene('game') as { switchStation: (id: string) => void };
+      scene.switchStation('espresso');
+    });
+    await page.mouse.up();
+
+    const settled = await sceneSatisfies(page, () => true);
+    expect(settled.milk.filling).toBe(false);
+
+    // And the volume must stop growing.
+    const before = settled.milk.fillMl;
+    await page.waitForTimeout(1200);
+    const after = (await sceneSatisfies(page, () => true)).milk.fillMl;
+    expect(after).toBeCloseTo(before, 1);
   });
 
   test('the queue counter reflects real customers on a multi-drink level', async ({ page }) => {
@@ -184,5 +274,15 @@ test.describe('regressions', () => {
     // Serving still works, proving the level is playable.
     await tap(page, SERVE[0], SERVE[1]);
     await sceneSatisfies(page, (s) => s.feedbackCard != null, 10_000);
+  });
+});
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the page explains itself instead of showing a blank background', async ({ page }) => {
+    await page.goto('/');
+    const text = await page.locator('noscript').textContent();
+    expect(text).toContain('JavaScript');
   });
 });

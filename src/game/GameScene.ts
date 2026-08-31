@@ -237,14 +237,16 @@ export class GameScene extends Phaser.Scene {
       onDown();
       this.refreshControls();
     });
-    bg.on('pointerup', () => {
+    const release = (): void => {
       onUp();
       this.refreshControls();
-    });
-    bg.on('pointerout', () => {
-      onUp();
-      this.refreshControls();
-    });
+    };
+    bg.on('pointerup', release);
+    bg.on('pointerout', release);
+    // A touch lifted off the button, or cancelled by the browser (scroll, incoming call,
+    // app switch), never fires pointerup on the button itself.
+    bg.on('pointerupoutside', release);
+    bg.on('pointercancel', release);
     return c;
   }
 
@@ -450,8 +452,21 @@ export class GameScene extends Phaser.Scene {
 
   // ---------- stations ----------
 
+  /**
+   * Hold buttons set a flag on pointerdown and clear it on pointerup, but destroying the
+   * button under the finger means that pointerup never arrives — and update() keeps acting
+   * on the flag regardless of which station is on screen, so the jug would fill for ever.
+   * Whoever tears the controls down owns releasing them.
+   */
+  private releaseHeldControls(): void {
+    this.ext.tampHeld = false;
+    this.milk.filling = false;
+    this.asm.pouringWater = false;
+  }
+
   private switchStation(id: 'espresso' | 'milk' | 'assembly'): void {
     if (this.activeStation === id) return;
+    this.releaseHeldControls();
     this.activeStation = id;
     this.stationView?.removeAll(true);
     this.controlsView?.getAll().forEach((obj) => obj.destroy(true));

@@ -18,7 +18,7 @@ export interface SceneState {
     tampKg: number; tampPeakKg: number; tampGood: boolean; brewing: boolean;
     brewSeconds: number; pulls: { tampOk: boolean; seconds: number }[]; doseGrams: number;
   };
-  milk: { fillMl: number; tempC: number; foamCm: number; steaming: boolean; ruined: boolean; used: boolean; jug: string | null };
+  milk: { fillMl: number; tempC: number; foamCm: number; steaming: boolean; ruined: boolean; used: boolean; filling: boolean; jug: string | null };
   asm: { vessel: string | null; shotsUsed: number; actions: string[] };
   feedbackCard: unknown;
 }
@@ -73,7 +73,7 @@ export async function activeScene(page: Page): Promise<SceneState> {
   return callHook<SceneState>(page, 'activeScene');
 }
 
-async function canvasScale(page: Page): Promise<{ left: number; top: number; sx: number; sy: number }> {
+export async function canvasScale(page: Page): Promise<{ left: number; top: number; sx: number; sy: number }> {
   const rect = await callHook<{ left: number; top: number; width: number; height: number }>(page, 'canvasRect');
   return { left: rect.left, top: rect.top, sx: rect.width / 390, sy: rect.height / 844 };
 }

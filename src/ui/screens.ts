@@ -21,6 +21,16 @@ export interface LevelSummaryData {
 }
 type Mode = 'learn' | 'practice' | 'shift';
 
+/**
+ * Escape anything that reaches innerHTML from stored data. Mastery keys, error tags and
+ * habit hints all originate in localStorage, so a known-good drink name is the happy path,
+ * not a guarantee.
+ */
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) =>
+    ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '"' ? '&quot;' : '&#39;');
+}
+
 let save: SaveData = loadSave();
 let selectedMode: Mode = 'learn';
 let startLevelHandler: ((levelId: string) => void) | null = null;
@@ -48,6 +58,9 @@ export function show(id: ScreenId): void {
     overlay.hidden = true;
     return;
   }
+  // The game writes progress after every serve, so this module's cached copy goes stale as
+  // soon as a level starts. Re-read before rendering, or the shell shows yesterday's numbers.
+  save = loadSave();
   overlay.hidden = false;
   overlay.replaceChildren();
   const screen = document.createElement('div');
@@ -275,7 +288,7 @@ function renderSummary(): string {
   const chips = s.reports.map((r, i) => {
     const labels = r.feedback
       .filter((f) => f !== 'PERFECT_ORDER' && f !== 'CORRECT_DRINK')
-      .map((f) => FEEDBACK_LABELS[f as keyof typeof FEEDBACK_LABELS] ?? f);
+      .map((f) => escapeHtml(FEEDBACK_LABELS[f as keyof typeof FEEDBACK_LABELS] ?? f));
     const good = labels.length === 0;
     return `<span class="chip ${good ? 'chip--good' : 'chip--bad'}">#${i + 1} ${r.total}%${labels.length > 0 ? ` \u00b7 ${labels.slice(0, 2).join(', ')}` : ' \u00b7 Perfect'}</span>`;
   }).join('');
@@ -283,7 +296,7 @@ function renderSummary(): string {
     .filter(([key]) => key.startsWith('drink:'))
     .map(([key, value]) => {
       const drinkName = RECIPES[key.slice('drink:'.length) as DrinkId]?.name ?? key;
-      return `${drinkName} mastery: ${Math.round(value)}%`;
+      return `${escapeHtml(drinkName)} mastery: ${Math.round(value)}%`;
     });
   const nextId = nextLevelId(s.levelId);
   return shell(title, `
@@ -291,7 +304,7 @@ function renderSummary(): string {
     <p class="stars" aria-label="${s.stars} of 3 stars" style="text-align:center;font-size:1.6rem">${starGlyphs}</p>
     <div class="summary-chips">${chips}</div>
     ${masteryLines.length > 0 ? `<div class="stack">${masteryLines.map((l) => `<span class="chip">${l}</span>`).join('')}</div>` : ''}
-    ${s.hints.length > 0 ? `<div class="stack">${s.hints.map((h) => `<p class="notice">${h}</p>`).join('')}</div>` : ''}
+    ${s.hints.length > 0 ? `<div class="stack">${s.hints.map((h) => `<p class="notice">${escapeHtml(h)}</p>`).join('')}</div>` : ''}
     <div class="btn-row">
       <button class="btn" data-action="retry">${MENU.retry}</button>
       ${nextId != null ? `<button class="btn btn--primary" data-action="next-level" data-next-id="${nextId}">${MENU.next}</button>` : ''}
@@ -336,6 +349,9 @@ function wireScreen(id: ScreenId, screen: HTMLElement): void {
   if (id === 'settings') {
     const bind = (inputId: string, key: 'sound' | 'vibration' | 'reduceAnimations'): void => {
       screen.querySelector(`#${inputId}`)?.addEventListener('change', (ev) => {
+        // Re-read before writing: persisting this module's copy verbatim would roll back
+        // every mastery, stat and unlock the game recorded since the screen was built.
+        save = loadSave();
         save.settings[key] = (ev.target as HTMLInputElement).checked;
         writeSave(save);
       });
