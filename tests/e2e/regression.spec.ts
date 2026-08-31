@@ -36,6 +36,95 @@ test.describe('regressions', () => {
     await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
   });
 
+  test('the queue counter reflects real customers on a multi-drink level', async ({ page }) => {
+    // multiDrink is presentation only: generateOrders ignores it, and each order gets
+    // its own customer, its own patience and its own lost-customer path. The counter
+    // must not halve them.
+    await page.evaluate(() => {
+      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
+        version: 1,
+        settings: { sound: false, vibration: false, reduceAnimations: true },
+        progress: {
+          learn: [100, 100, 100, 100, 100],
+          practice: [100, 100, 100, 100, 100],
+          shift: Array.from({ length: 9 }, () => ({ stars: 1, best: 70 })),
+        },
+        rank: 'barista', mastery: {}, errorTagCounts: {},
+        stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
+      }));
+    });
+    await startLevel(page, 'S9');
+
+    const queue = await page.evaluate(() => {
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT as { game: { scene: { getScene: (k: string) => unknown } } };
+      const scene = hook.game.scene.getScene('game') as {
+        orders: unknown[];
+        drinkIndex: number;
+        renderTicket: () => void;
+        children: { getByName: (n: string) => { text?: string } | null };
+      };
+      const order = (drink: string) => ({
+        drink, size: 'small', shots: 1, milk: 'whole', extraHot: false, takeaway: false,
+      });
+      scene.orders = Array.from({ length: 7 }, () => order('espresso'));
+      const read = (index: number): string => {
+        scene.drinkIndex = index;
+        scene.renderTicket();
+        return scene.children.getByName('queue-label')?.text ?? '';
+      };
+      return { atStart: read(0), midway: read(3), last: read(6) };
+    });
+
+    expect(queue.atStart).toContain('6');
+    expect(queue.midway).toContain('3');
+    expect(queue.last).toContain('0');
+  });
+
+  test('a multi-drink ticket shows the pair being worked on, not the first pair', async ({ page }) => {
+    // S9 is a multiDrink level. Unlock the shift levels, then pin a known set of
+    // orders so the assertions cannot be satisfied by a coincidental repeat.
+    await page.evaluate(() => {
+      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
+        version: 1,
+        settings: { sound: false, vibration: false, reduceAnimations: true },
+        progress: {
+          learn: [100, 100, 100, 100, 100],
+          practice: [100, 100, 100, 100, 100],
+          shift: Array.from({ length: 9 }, () => ({ stars: 1, best: 70 })),
+        },
+        rank: 'barista', mastery: {}, errorTagCounts: {},
+        stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
+      }));
+    });
+    await startLevel(page, 'S9');
+
+    const ticket = await page.evaluate(() => {
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT as { game: { scene: { getScene: (k: string) => unknown } } };
+      const scene = hook.game.scene.getScene('game') as {
+        orders: unknown[];
+        drinkIndex: number;
+        ticketFields: Record<string, { text: string }>;
+        renderTicket: () => void;
+      };
+      const order = (drink: string) => ({
+        drink, size: 'small', shots: 1, milk: 'whole', extraHot: false, takeaway: false,
+      });
+      scene.orders = [order('espresso'), order('latte'), order('americano'), order('cappuccino')];
+      scene.drinkIndex = 2; // second pair, first drink
+      scene.renderTicket();
+      return { first: scene.ticketFields['drink']?.text ?? '', second: scene.ticketFields['second']?.text ?? '' };
+    });
+
+    // The drink actually being made must be on the ticket.
+    expect(ticket.first).toContain('americano');
+    expect(ticket.second).toContain('cappuccino');
+    // The already-served first pair must not be presented as the current work.
+    expect(ticket.first).not.toContain('espresso');
+    expect(ticket.second).not.toContain('latte');
+  });
+
   test('the DOM shell is styled and its primary action fits the first screen', async ({ page }) => {
     // src/style.css reaches the bundle only through main.ts; without that import the
     // shell renders unstyled and Play drops far below the fold. The viewport meta is

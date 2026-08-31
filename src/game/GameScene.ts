@@ -274,12 +274,6 @@ export class GameScene extends Phaser.Scene {
     return this.orders[this.drinkIndex] ?? null;
   }
 
-  /** The other drink on a multi-drink ticket, if any. */
-  private pairDrink(): DrinkOrder | null {
-    if (!this.level?.multiDrink || this.drinkIndex % 2 === 1) return null;
-    return this.orders[this.drinkIndex + 1] ?? null;
-  }
-
   private startDrink(): void {
     if (this.currentDrink() == null) {
       this.finishLevel();
@@ -335,16 +329,21 @@ export class GameScene extends Phaser.Scene {
   private renderTicket(): void {
     const order = this.currentDrink();
     if (order == null) return;
-    const pair = this.pairDrink();
     const recipe = recipeFor(order.drink);
-    const served = (i: number): boolean => i < this.drinkIndex;
-    const first = `${served(0) ? '\u2713 ' : '\u25B8 '}1. ${this.drinkLine(this.orders[0] ?? order)}`;
-    this.ticketFields['drink']?.setText(pair || this.level?.multiDrink ? first : `\u25B8 ${this.drinkLine(order)}`);
-    if (pair != null) {
-      this.ticketFields['second']?.setText(`2. ${this.drinkLine(pair)}`);
-    } else if (this.level?.multiDrink) {
-      this.ticketFields['second']?.setText(served(this.drinkIndex) ? `\u2713 2. ${this.drinkLine(order)}` : `2. ${this.drinkLine(order)}`);
+    if (this.level?.multiDrink === true) {
+      // A multi-drink ticket lists the pair the player is on. Anchoring line 1 to
+      // orders[0] instead of the current pair hid the drink actually being made from
+      // the second pair onwards. The last pair is half-empty when orderCount is odd.
+      const pairStart = this.drinkIndex - (this.drinkIndex % 2);
+      const mark = (i: number): string => (i < this.drinkIndex ? '\u2713 ' : i === this.drinkIndex ? '\u25B8 ' : '');
+      const firstOrder = this.orders[pairStart] ?? order;
+      const secondOrder = this.orders[pairStart + 1] ?? null;
+      this.ticketFields['drink']?.setText(`${mark(pairStart)}1. ${this.drinkLine(firstOrder)}`);
+      this.ticketFields['second']?.setText(
+        secondOrder != null ? `${mark(pairStart + 1)}2. ${this.drinkLine(secondOrder)}` : '',
+      );
     } else {
+      this.ticketFields['drink']?.setText(`\u25B8 ${this.drinkLine(order)}`);
       this.ticketFields['second']?.setText('');
     }
     const tempRange = order.extraHot
@@ -355,13 +354,17 @@ export class GameScene extends Phaser.Scene {
     queue?.setText(`${this.remainingCustomers()} \u25CF`);
   }
 
+  /**
+   * Every order is its own customer: generateOrders ignores multiDrink, and each order
+   * carries its own patience and its own lost-customer path. Pairing them on the ticket
+   * is presentation, so the queue must not be halved.
+   */
   private customerIndex(): number {
-    return this.level?.multiDrink ? Math.floor(this.drinkIndex / 2) : this.drinkIndex;
+    return this.drinkIndex;
   }
 
   private totalCustomers(): number {
-    if (this.level == null) return 0;
-    return this.level.multiDrink ? Math.ceil(this.orders.length / 2) : this.orders.length;
+    return this.orders.length;
   }
 
   private remainingCustomers(): number {
