@@ -491,7 +491,9 @@ export class GameScene extends Phaser.Scene {
     this.releaseHeldControls();
     this.activeStation = id;
     this.stationView?.removeAll(true);
-    this.controlsView?.getAll().forEach((obj) => obj.destroy(true));
+    this.controlsView?.getAll().forEach((obj) => {
+      obj.destroy(true);
+    });
     if (id === 'espresso') this.renderExtraction();
     else if (id === 'milk') this.renderMilk();
     else this.renderAssembly();

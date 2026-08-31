@@ -18,9 +18,6 @@ const SCALE = Number(process.env.SCALE ?? 2);
 const BASE = 'http://localhost:5173';
 const OUT = `/tmp/playthrough-${MODE}.json`;
 const LEVELS = (process.env.LEVELS ?? 'L1,L2,L3,L4,L5,P1,P2,P3,P4,P5,S1,S2,S3,S4,S5,S6,S7,S8,S9,S10').split(',');
-// reaction budget: a skilled human reacts in ~0.3-0.45 s; the bot's evaluate
-// latency plays the same role. Release holds predictively before the target.
-const REACTION_S = 0.45;
 
 // ---- House Standard reference (mirrors src/domain) ----
 const MILK_ML = {
@@ -85,41 +82,6 @@ async function waitState(pred, timeoutMs, label) {
     await page.waitForTimeout(120);
   }
 }
-// Closed-loop hold: poll the live value and release when the value PROJECTED
-// over the measured evaluate latency reaches the target. The observed value is
-// stale by one round-trip; without projection the bot overshoots fast ramps.
-const holdUntilValue = async (gx, gy, readExpr, ratePerRealSec, target, timeoutMs, label) => {
-  await page.mouse.move(rect.left + gx * sx, rect.top + gy * sy);
-  await page.mouse.down();
-  try {
-    const start = Date.now();
-    for (;;) {
-      const t0 = Date.now();
-      const v = await page.evaluate(readExpr);
-      const latencyS = (Date.now() - t0 + 150) / 1000;
-      if (v + ratePerRealSec * latencyS >= target) break;
-      if (Date.now() - start > timeoutMs) throw new Error(`holdUntilValue(${label}) timed out at ${v}`);
-      await page.waitForTimeout(50);
-    }
-  } finally { await page.mouse.up(); }
-  await page.waitForTimeout(60);
-};
-
-// Tap-based variant for stop-style actions (brew stop, jug off).
-const tapAtProjected = async (gx, gy, readExpr, ratePerRealSec, target, timeoutMs, label) => {
-  const start = Date.now();
-  for (;;) {
-    const t0 = Date.now();
-    const v = await page.evaluate(readExpr);
-    const latencyS = (Date.now() - t0 + 150) / 1000;
-    if (v + ratePerRealSec * latencyS >= target) break;
-    if (Date.now() - start > timeoutMs) throw new Error(`tapAtProjected(${label}) timed out at ${v}`);
-    await page.waitForTimeout(50);
-  }
-  await tap(gx, gy);
-};
-
-
 let milkTrace = null;
 const shotAnomalies = [];
 
