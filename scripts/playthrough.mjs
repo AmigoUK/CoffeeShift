@@ -10,8 +10,9 @@
  * House Standard constants mirrored here deliberately: the bot encodes the
  * player's knowledge of the recipes.
  */
-import { chromium } from '@playwright/test';
+
 import { writeFileSync } from 'node:fs';
+import { chromium } from '@playwright/test';
 
 const MODE = process.argv[2] ?? 'clean';
 const SCALE = Number(process.env.SCALE ?? 2);

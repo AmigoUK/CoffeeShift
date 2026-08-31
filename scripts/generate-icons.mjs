@@ -3,10 +3,11 @@
  * in src/sprites/ui.ts — the single source of truth. Hand-rolled PNG encoder
  * over node:zlib; no new dependencies.
  */
-import { deflateSync } from 'node:zlib';
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { deflateSync } from 'node:zlib';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 

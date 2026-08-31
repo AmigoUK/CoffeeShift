@@ -16,6 +16,10 @@ export default defineConfig({
   timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,
+  // The guided-flow specs stop a shot on a fixed 27.2 s of brew time against a 24-31 s
+  // grading band, so a stalled main thread can push it out of band. One retry keeps CI
+  // honest — Playwright still reports the test as flaky rather than hiding it.
+  retries: process.env.CI != null ? 1 : 0,
   workers: 1,
   reporter: 'list',
   use: {

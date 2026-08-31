@@ -1,7 +1,7 @@
-import type { DrinkId, DrinkOrder, FeedbackId, ScoreReport } from './types';
-import { isMilkDrink } from './recipes';
 import { LEVELS, levelById } from './levels';
+import { isMilkDrink } from './recipes';
 import type { SaveData } from './save';
+import type { DrinkId, DrinkOrder, FeedbackId, ScoreReport } from './types';
 export const LEARN_PASS = 60; // Learn levels pass at 60% total (generous)
 
 export function starsFor(total: number): number {

@@ -60,6 +60,10 @@ narzut latencji z pomiaru.
 ## Środowisko
 
 - Dev: `npm run dev` (5173, `VITE_PORT`). Testy: `npm test`, `npm run test:e2e`, lint: `npm run lint`.
+- Znana niestabilność: `Learn L1` w `gameplay.spec.ts` zatrzymuje strzał na sztywnych
+  27,2 s przy paśmie oceny 24–31 s, więc obciążony wątek główny potrafi go wypchnąć poza
+  pasmo (2 na ~6 pełnych przebiegów). CI ma jedną próbę ponowną. Trwałe rozwiązanie to
+  zamknięcie pętli na `ext.brewSeconds` zamiast stałego oczekiwania.
 - Bot: `LEVELS=S9 SCALE=1 node scripts/playthrough.mjs clean` (patrz sprostowanie wyżej).
 - Gra na żywo: Docker 4180 + tailscale serve. Service worker wymaga HTTPS —
   bez TLS przed aplikacją PWA nie działa offline i nie zgłasza tego w UI.

@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { vi } from 'vitest';
-import { defaultSave, loadSave, resetMemorySave, savePersistence, writeSave, SAVE_KEY } from '../src/domain/save';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { defaultSave, loadSave, resetMemorySave, SAVE_KEY, savePersistence, writeSave } from '../src/domain/save';
 
 class MockStorage implements Storage {
   private map = new Map<string, string>();

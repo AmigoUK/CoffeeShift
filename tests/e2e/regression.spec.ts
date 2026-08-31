@@ -1,5 +1,7 @@
-import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { SMALL_JUG_CAPACITY_ML, VESSEL_CAPACITY_ML } from '../../src/domain/recipes';
+import { BAR_Y, COL_X, ROW_Y, TABS_Y } from '../../src/game/layout';
 import {
   callHook,
   canvasScale,
@@ -11,8 +13,6 @@ import {
   waitForBoot,
   writeSave,
 } from './helpers';
-import { BAR_Y, COL_X, ROW_Y, TABS_Y } from '../../src/game/layout';
-import { SMALL_JUG_CAPACITY_ML, VESSEL_CAPACITY_ML } from '../../src/domain/recipes';
 
 // Button positions come from the scene's layout module, not from copied numbers.
 const DOSE = [COL_X[0], ROW_Y[1]] as const;

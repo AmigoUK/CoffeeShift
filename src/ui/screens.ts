@@ -1,3 +1,16 @@
+import { LEVELS, levelById, levelsForMode } from '../domain/levels';
+import {
+  isLearnUnlocked,
+  isPracticeUnlocked,
+  isShiftUnlocked,
+  LEARN_PASS,
+  rankFor,
+  starsFor,
+} from '../domain/progression';
+import { DRINK_IDS, EXTRACTION, MILK_TEMP, parFor, RECIPES } from '../domain/recipes';
+import type { SaveData } from '../domain/save';
+import { defaultSave, loadSave, savePersistence, writeSave } from '../domain/save';
+import type { DrinkId } from '../domain/types';
 import {
   APP_NAME,
   FEEDBACK_LABELS,
@@ -9,19 +22,6 @@ import {
   VESSEL_LABELS,
 } from './copy';
 import { renderFooter } from './footer';
-import type { SaveData } from '../domain/save';
-import { defaultSave, loadSave, savePersistence, writeSave } from '../domain/save';
-import { DRINK_IDS, EXTRACTION, MILK_TEMP, RECIPES, parFor } from '../domain/recipes';
-import type { DrinkId } from '../domain/types';
-import { LEVELS, levelById, levelsForMode } from '../domain/levels';
-import {
-  LEARN_PASS,
-  isLearnUnlocked,
-  isPracticeUnlocked,
-  isShiftUnlocked,
-  rankFor,
-  starsFor,
-} from '../domain/progression';
 
 export type ScreenId = 'menu' | 'mode' | 'levels' | 'settings' | 'recipe-book' | 'summary' | 'game';
 

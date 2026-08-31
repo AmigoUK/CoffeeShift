@@ -1,4 +1,20 @@
 import Phaser from 'phaser';
+import { grade } from '../domain/grading';
+import type { LevelDef } from '../domain/levels';
+import { levelById } from '../domain/levels';
+import { archetypeForOrderIndex, generateOrders, mulberry32, orderLine } from '../domain/orders';
+import { recordResult } from '../domain/progression';
+import {
+  EXTRACTION,
+  LARGE_JUG_CAPACITY_ML,
+  MILK_TEMP,
+  parFor,
+  recipeFor,
+  SMALL_JUG_CAPACITY_ML,
+  VESSEL_CAPACITY_ML,
+} from '../domain/recipes';
+import type { SaveData } from '../domain/save';
+import { loadSave, writeSave } from '../domain/save';
 import type {
   DrinkOrder,
   ExtractionPull,
@@ -11,14 +27,18 @@ import type {
   VesselId,
 } from '../domain/types';
 import {
-  EXTRACTION,
-  LARGE_JUG_CAPACITY_ML,
-  MILK_TEMP,
-  SMALL_JUG_CAPACITY_ML,
-  VESSEL_CAPACITY_ML,
-  parFor,
-  recipeFor,
-} from '../domain/recipes';
+  BREAKDOWN_COPY,
+  FEEDBACK_LABELS,
+  GAME_COPY,
+  GUIDED_COPY,
+  MENU,
+  STATION_COPY,
+  STATUS_COPY,
+  summarySentence,
+  TOAST_COPY,
+} from '../ui/copy';
+import { announce } from '../ui/live-region';
+import { sfx } from './audio';
 import {
   BAR_Y,
   BTN,
@@ -35,27 +55,7 @@ import {
   TOAST_Y,
   TOP_PANEL,
 } from './layout';
-import { generateOrders, mulberry32, archetypeForOrderIndex, orderLine } from '../domain/orders';
-import { levelById } from '../domain/levels';
-import type { LevelDef } from '../domain/levels';
-import { grade } from '../domain/grading';
-import { recordResult } from '../domain/progression';
-import { loadSave, writeSave } from '../domain/save';
-import type { SaveData } from '../domain/save';
-import { sfx } from './audio';
 import { getTimeScale } from './timeScale';
-import {
-  BREAKDOWN_COPY,
-  FEEDBACK_LABELS,
-  GAME_COPY,
-  GUIDED_COPY,
-  MENU,
-  STATION_COPY,
-  STATUS_COPY,
-  TOAST_COPY,
-  summarySentence,
-} from '../ui/copy';
-import { announce } from '../ui/live-region';
 export interface LevelCompletePayload {
   levelId: string;
   reports: { order: DrinkOrder; total: number; feedback: FeedbackId[] }[];

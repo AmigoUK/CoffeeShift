@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { BAR_Y, COL_X, FEEDBACK, ROW_Y, TABS_Y } from '../../src/game/layout';
 import {
   activeScene,
   callHook,
@@ -13,7 +14,6 @@ import {
   waitForBoot,
   writeSave,
 } from './helpers';
-import { BAR_Y, COL_X, FEEDBACK, ROW_Y, TABS_Y } from '../../src/game/layout';
 
 // Button positions derived from the scene's own layout module, so a layout change moves
 // the tests with it instead of silently making them tap empty canvas.

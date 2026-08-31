@@ -12,8 +12,8 @@
     "prebuild": "node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "biome lint src tests scripts",
-    "format": "biome format --write src tests scripts",
+    "lint": "biome check src tests scripts",
+    "format": "biome check --write src tests scripts",
     "test": "vitest run --passWithNoTests",
     "pretest:e2e": "npm run build",
     "test:e2e": "playwright test"

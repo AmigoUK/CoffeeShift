@@ -1,12 +1,12 @@
 import './style.css';
 import type Phaser from 'phaser';
-import { setTimeScale } from './game/timeScale';
-import type { LevelCompletePayload } from './game/GameScene';
-import { setExitGameHandler, setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
-import { BOOT_ERROR_COPY, GAME_COPY } from './ui/copy';
-import * as layout from './game/layout';
-import { loadSave, writeSave } from './domain/save';
 import { applyLevelResult, habitHints } from './domain/progression';
+import { loadSave, writeSave } from './domain/save';
+import type { LevelCompletePayload } from './game/GameScene';
+import * as layout from './game/layout';
+import { setTimeScale } from './game/timeScale';
+import { BOOT_ERROR_COPY, GAME_COPY } from './ui/copy';
+import { setExitGameHandler, setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
 
 /**
  * Phaser needs WebGL or Canvas2D. Without this guard a browser that provides neither leaves

@@ -1,5 +1,5 @@
-import type { DrinkId, MilkId, ModeId, SizeId } from './types';
 import { RECIPES } from './recipes';
+import type { DrinkId, MilkId, ModeId, SizeId } from './types';
 
 export interface LevelDef {
   id: string;

@@ -2,8 +2,9 @@
  * Captures repo screenshots from the production container (port 4180)
  * by driving the real UI — no dev hooks. Output: docs/screenshots/*.png
  */
-import { chromium } from '@playwright/test';
+
 import { mkdirSync } from 'node:fs';
+import { chromium } from '@playwright/test';
 
 const BASE = `http://127.0.0.1:${process.env.APP_PORT ?? 4180}`;
 const OUT = 'docs/screenshots';

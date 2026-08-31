@@ -1,3 +1,5 @@
+import type { Recipe } from './recipes';
+import { EXTRACTION, MILK_TEMP, parFor, SMALL_JUG_MAX_ML } from './recipes';
 import type {
   DrinkOrder,
   FeedbackId,
@@ -7,8 +9,6 @@ import type {
   SizeId,
   SummaryOpenerId,
 } from './types';
-import { MILK_TEMP, EXTRACTION, SMALL_JUG_MAX_ML, parFor } from './recipes';
-import type { Recipe } from './recipes';
 
 interface Check {
   earned: number;

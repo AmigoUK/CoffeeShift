@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
-import { PALETTE, TRANSPARENT_CHARS } from './palette';
 import { SPRITES } from './index';
+import { PALETTE, TRANSPARENT_CHARS } from './palette';
 
 /** Render every string-map sprite to an offscreen canvas and register it as a texture. */
 export function registerTextures(scene: Phaser.Scene): void {

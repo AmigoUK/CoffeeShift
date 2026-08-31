@@ -1,4 +1,4 @@
-import type { VesselId, DrinkId, SizeId } from './types';
+import type { DrinkId, SizeId, VesselId } from './types';
 
 /**
  * The House Standard. Single source of truth for every gameplay judgement

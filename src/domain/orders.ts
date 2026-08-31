@@ -1,8 +1,8 @@
-import type { DrinkId, DrinkOrder, MilkId, SizeId } from './types';
-import { RECIPES, defaultShots, resolveShots } from './recipes';
-import { drinkWeight } from './progression';
 import type { LevelDef } from './levels';
+import { drinkWeight } from './progression';
+import { defaultShots, RECIPES, resolveShots } from './recipes';
 import type { SaveData } from './save';
+import type { DrinkId, DrinkOrder, MilkId, SizeId } from './types';
 
 /** Seeded RNG (mulberry32) — deterministic order generation for tests and Learn levels. */
 export function mulberry32(seed: number): () => number {

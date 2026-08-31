@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ARCHETYPES, archetypeForOrderIndex, generateOrders, mulberry32, orderLine } from '../src/domain/orders';
 import { LEVELS } from '../src/domain/levels';
+import { ARCHETYPES, archetypeForOrderIndex, generateOrders, mulberry32, orderLine } from '../src/domain/orders';
 import { RECIPES } from '../src/domain/recipes';
 import { defaultSave } from '../src/domain/save';
 import type { DrinkOrder } from '../src/domain/types';

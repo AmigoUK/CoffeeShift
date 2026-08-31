@@ -3,8 +3,9 @@
  * layer deliberately does not import from here: it reports what happened as data, and this
  * module turns that into words.
  */
-import type { FeedbackId, ScoreSummary } from '../domain/types';
+
 import { EXTRACTION, SMALL_JUG_MAX_ML } from '../domain/recipes';
+import type { FeedbackId, ScoreSummary } from '../domain/types';
 
 export const APP_NAME = 'Coffee Shift';
 

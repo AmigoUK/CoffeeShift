@@ -1,8 +1,8 @@
 import type { SpriteData } from './customers';
 import { CUSTOMER_SPRITES } from './customers';
 import { EQUIPMENT_SPRITES } from './equipment';
-import { VESSEL_SPRITES } from './vessels';
 import { UI_SPRITES } from './ui';
+import { VESSEL_SPRITES } from './vessels';
 
 export type { SpriteData };
 

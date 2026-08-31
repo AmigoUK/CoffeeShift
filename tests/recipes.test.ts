@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRINK_IDS, RECIPES, defaultShots, parFor } from '../src/domain/recipes';
+import { DRINK_IDS, defaultShots, parFor, RECIPES } from '../src/domain/recipes';
 
 describe('recipes data invariants', () => {
   it('every drink has a unique house vessel', () => {
