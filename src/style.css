@@ -258,3 +258,24 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.boot-error {
+  max-width: 32rem;
+  margin: 2rem auto;
+  padding: 1.25rem 1.5rem;
+  border: 2px solid var(--coffee);
+  border-radius: 10px;
+  background: var(--milk);
+  color: var(--text);
+  text-align: center;
+}
+
+.boot-error h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.boot-error p {
+  margin: 0;
+  line-height: 1.5;
+}

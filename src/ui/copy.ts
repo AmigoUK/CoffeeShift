@@ -145,3 +145,10 @@ export const MODE_COPY = {
   starsEarned: 'stars earned',
   rank: 'Rank',
 } as const;
+
+/** Shown when the browser cannot run the game at all. */
+export const BOOT_ERROR_COPY = {
+  title: 'Coffee Shift cannot start',
+  noCanvas: 'This browser could not create the graphics canvas the game needs. Try a different or newer browser, or turn hardware acceleration back on.',
+  noScript: 'Coffee Shift needs JavaScript. Please switch it on and reload the page.',
+} as const;

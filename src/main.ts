@@ -5,10 +5,32 @@ import { setTimeScale } from './game/timeScale';
 import { GameScene } from './game/GameScene';
 import type { LevelCompletePayload } from './game/GameScene';
 import { setInstallPrompt, setStartLevelHandler, show, showSummary } from './ui/screens';
+import { BOOT_ERROR_COPY } from './ui/copy';
 import { loadSave, writeSave } from './domain/save';
 import { applyLevelResult, habitHints } from './domain/progression';
 
-const game = new Phaser.Game({
+/**
+ * Phaser needs WebGL or Canvas2D. Without this guard a browser that provides neither
+ * throws during module evaluation, the rest of main.ts never runs and the player is left
+ * staring at an empty page with no explanation.
+ */
+function reportBootFailure(): void {
+  const host = document.getElementById('overlay') ?? document.body;
+  const panel = document.createElement('div');
+  panel.className = 'boot-error';
+  panel.setAttribute('role', 'alert');
+  const title = document.createElement('h1');
+  title.textContent = BOOT_ERROR_COPY.title;
+  const body = document.createElement('p');
+  body.textContent = BOOT_ERROR_COPY.noCanvas;
+  panel.append(title, body);
+  host.replaceChildren(panel);
+  host.hidden = false;
+}
+
+let game: Phaser.Game;
+try {
+  game = new Phaser.Game({
   type: Phaser.AUTO,
   pixelArt: true,
   parent: 'game-canvas',
@@ -20,7 +42,12 @@ const game = new Phaser.Game({
     height: 844,
   },
   scene: [BootScene, GameScene],
-});
+  });
+} catch (error) {
+  console.error('Coffee Shift could not start Phaser', error);
+  reportBootFailure();
+  throw error;
+}
 
 setStartLevelHandler((levelId) => {
   game.events.emit('start-level', levelId);
