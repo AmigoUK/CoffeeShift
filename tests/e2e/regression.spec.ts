@@ -37,6 +37,29 @@ test.describe('regressions', () => {
     await clearSave(page);
   });
 
+  test('the feedback card renders a phrased summary, not raw fault ids', async ({ page }) => {
+    // The domain reports faults as data and the copy layer phrases them. Every other test
+    // checks one side or the other; this one checks that the two meet on screen.
+    await startLevel(page, 'L1');
+    await tap(page, SERVE[0], SERVE[1]);
+    await sceneSatisfies(page, (s2) => s2.feedbackCard != null, 10_000);
+
+    const texts = await page.evaluate(() => {
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT as { game: { scene: { getScene: (k: string) => unknown } } };
+      const scene = hook.game.scene.getScene('game') as {
+        feedbackCard?: { list: { type: string; text?: string }[] } | null;
+      };
+      return (scene.feedbackCard?.list ?? []).filter((o) => o.type === 'Text').map((o) => o.text ?? '');
+    });
+
+    const sentence = texts.find((t) => t.includes('.') && t.split(' ').length > 3) ?? '';
+    expect(sentence).not.toMatch(/[A-Z]{3,}_[A-Z]/);   // no raw fault ids leaking through
+    expect(sentence).toMatch(/^[A-Z]/);
+    expect(sentence.trim().endsWith('.')).toBe(true);
+    expect(texts.some((t) => t.includes('Order match'))).toBe(true);
+  });
+
   test('binning a drink needs a second tap and can be undone', async ({ page }) => {
     await startLevel(page, 'L1');
     await tap(page, COL_X[2], TABS_Y);   // assembly station
