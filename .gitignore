@@ -31,3 +31,6 @@ dev-dist
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Audit working files
+.audit/
