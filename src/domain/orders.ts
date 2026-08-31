@@ -34,12 +34,15 @@ function weightedPick<T>(items: T[], weights: number[], rng: () => number): T {
 export function generateOrders(level: LevelDef, rng: () => number, save: SaveData): DrinkOrder[] {
   const orders: DrinkOrder[] = [];
   for (let i = 0; i < level.orderCount; i++) {
-    const drink = weightedPick(level.drinkPool, level.drinkPool.map((d) => drinkWeight(save, d)), rng) as DrinkId;
+    const drink = weightedPick(
+      level.drinkPool,
+      level.drinkPool.map((d) => drinkWeight(save, d)),
+      rng,
+    ) as DrinkId;
     const recipe = RECIPES[drink];
     const sizes = recipe.allowedSizes.filter((s) => level.sizes.includes(s));
-    const size: SizeId = sizes.length > 0
-      ? (sizes[Math.floor(rng() * sizes.length)] as SizeId)
-      : (recipe.allowedSizes[0] as SizeId);
+    const size: SizeId =
+      sizes.length > 0 ? (sizes[Math.floor(rng() * sizes.length)] as SizeId) : (recipe.allowedSizes[0] as SizeId);
     let milk: MilkId = 'whole';
     if (recipe.milkDrink && level.milks.length > 1) {
       milk = level.milks[Math.floor(rng() * level.milks.length)] as MilkId;
@@ -67,7 +70,10 @@ export const ARCHETYPES: CustomerArchetype[] = [
 const SHOT_WORDS: Record<number, string> = { 2: 'double', 3: 'triple' };
 
 /** Noun phrase without article, e.g. "medium oat latte", "double espresso". */
-function nounPhrase(order: { drink: DrinkId; size: SizeId; shots: number; milk: MilkId }, includeSize: boolean): string {
+function nounPhrase(
+  order: { drink: DrinkId; size: SizeId; shots: number; milk: MilkId },
+  includeSize: boolean,
+): string {
   const recipe = RECIPES[order.drink];
   const milk = recipe.milkDrink && order.milk !== 'whole' ? `${order.milk} ` : '';
   const espressoShot = order.drink === 'espresso' ? SHOT_WORDS[order.shots] : undefined;

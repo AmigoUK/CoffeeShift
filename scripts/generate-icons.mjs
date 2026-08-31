@@ -79,8 +79,8 @@ function encodePng(width, height, rgba) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8;  // bit depth
-  ihdr[9] = 6;  // colour type RGBA
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 6; // colour type RGBA
   const raw = Buffer.alloc(height * (1 + width * 4));
   for (let y = 0; y < height; y++) {
     raw[y * (1 + width * 4)] = 0; // filter: none
@@ -109,9 +109,15 @@ function render(sprite, palette, size, background, contentScale) {
       const hex = ch != null ? palette[ch] : undefined;
       if (hex != null && ch !== '.' && ch !== ' ') {
         const [r, g, b] = hexToRgb(hex);
-        rgba[i] = r; rgba[i + 1] = g; rgba[i + 2] = b; rgba[i + 3] = 255;
+        rgba[i] = r;
+        rgba[i + 1] = g;
+        rgba[i + 2] = b;
+        rgba[i + 3] = 255;
       } else {
-        rgba[i] = br; rgba[i + 1] = bg; rgba[i + 2] = bb; rgba[i + 3] = 255;
+        rgba[i] = br;
+        rgba[i + 1] = bg;
+        rgba[i + 2] = bb;
+        rgba[i + 3] = 255;
       }
     }
   }

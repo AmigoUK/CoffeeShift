@@ -48,17 +48,38 @@ describe('order line builder — golden strings', () => {
   });
 
   it('could-i-get style with an extra shot', () => {
-    const order: DrinkOrder = { drink: 'flat-white', size: 'small', shots: 3, milk: 'whole', extraHot: false, takeaway: false };
+    const order: DrinkOrder = {
+      drink: 'flat-white',
+      size: 'small',
+      shots: 3,
+      milk: 'whole',
+      extraHot: false,
+      takeaway: false,
+    };
     expect(orderLine(order, student)).toBe('Could I get a small flat white with an extra shot?');
   });
 
   it('counting style takeaway americano', () => {
-    const order: DrinkOrder = { drink: 'americano', size: 'large', shots: 2, milk: 'whole', extraHot: false, takeaway: true };
+    const order: DrinkOrder = {
+      drink: 'americano',
+      size: 'large',
+      shots: 2,
+      milk: 'whole',
+      extraHot: false,
+      takeaway: true,
+    };
     expect(orderLine(order, commuter)).toBe('One large americano to go, please.');
   });
 
   it('plain style double espresso', () => {
-    const order: DrinkOrder = { drink: 'espresso', size: 'small', shots: 2, milk: 'whole', extraHot: false, takeaway: false };
+    const order: DrinkOrder = {
+      drink: 'espresso',
+      size: 'small',
+      shots: 2,
+      milk: 'whole',
+      extraHot: false,
+      takeaway: false,
+    };
     expect(orderLine(order, regular)).toBe('A double espresso, please.');
   });
 

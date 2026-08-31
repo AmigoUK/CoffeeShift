@@ -1,7 +1,8 @@
 import type { SpriteData } from './customers';
 
 const iconUndo: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -23,7 +24,8 @@ const iconUndo: SpriteData = {
 };
 
 const iconServe: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -45,7 +47,8 @@ const iconServe: SpriteData = {
 };
 
 const iconBook: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '..BBBBBBBBB.....',
@@ -67,7 +70,8 @@ const iconBook: SpriteData = {
 };
 
 const iconSettings: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '.....ssss.......',
@@ -89,7 +93,8 @@ const iconSettings: SpriteData = {
 };
 
 const iconStar: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '.......YY.......',
@@ -111,7 +116,8 @@ const iconStar: SpriteData = {
 };
 
 const stationEspresso: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '..ssssssssss....',
@@ -133,7 +139,8 @@ const stationEspresso: SpriteData = {
 };
 
 const stationMilk: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '..ss............',
@@ -155,7 +162,8 @@ const stationMilk: SpriteData = {
 };
 
 const stationAssembly: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -178,7 +186,8 @@ const stationAssembly: SpriteData = {
 
 /** Pixel-art app icon: takeaway cup on a coffee-brown roundel. */
 export const APP_ICON: SpriteData = {
-  w: 32, h: 32,
+  w: 32,
+  h: 32,
   rows: [
     'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK',
     'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK',

@@ -16,10 +16,24 @@ export interface SceneState {
   level: { id: string } | null;
   orders: { drink: string; size: string; shots: number }[];
   ext: {
-    tampKg: number; tampPeakKg: number; tampGood: boolean; brewing: boolean;
-    brewSeconds: number; pulls: { tampOk: boolean; seconds: number }[]; doseGrams: number;
+    tampKg: number;
+    tampPeakKg: number;
+    tampGood: boolean;
+    brewing: boolean;
+    brewSeconds: number;
+    pulls: { tampOk: boolean; seconds: number }[];
+    doseGrams: number;
   };
-  milk: { fillMl: number; tempC: number; foamCm: number; steaming: boolean; ruined: boolean; used: boolean; filling: boolean; jug: string | null };
+  milk: {
+    fillMl: number;
+    tempC: number;
+    foamCm: number;
+    steaming: boolean;
+    ruined: boolean;
+    used: boolean;
+    filling: boolean;
+    jug: string | null;
+  };
   asm: { vessel: string | null; shotsUsed: number; actions: string[]; waterMl: number | null };
   feedbackCard: unknown;
 }
@@ -32,16 +46,19 @@ type HookMethod = 'startLevel' | 'activeScene' | 'canvasRect';
  * inside the page context.
  */
 export async function callHook<T>(page: Page, method: HookMethod, arg?: string): Promise<T> {
-  return page.evaluate<T, { method: HookMethod; arg?: string }>(({ method: name, arg: value }) => {
-    const w = window as unknown as Record<string, unknown>;
-    const hook = w.__COFFEE_SHIFT;
-    if (hook == null || typeof hook !== 'object' || !(name in hook)) {
-      throw new Error(`__COFFEE_SHIFT.${name} unavailable — is this the dev server?`);
-    }
-    const fn = (hook as Record<string, unknown>)[name];
-    if (typeof fn !== 'function') throw new Error(`__COFFEE_SHIFT.${name} is not a function`);
-    return (fn as (a?: string) => T)(value) as T;
-  }, { method, arg });
+  return page.evaluate<T, { method: HookMethod; arg?: string }>(
+    ({ method: name, arg: value }) => {
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT;
+      if (hook == null || typeof hook !== 'object' || !(name in hook)) {
+        throw new Error(`__COFFEE_SHIFT.${name} unavailable — is this the dev server?`);
+      }
+      const fn = (hook as Record<string, unknown>)[name];
+      if (typeof fn !== 'function') throw new Error(`__COFFEE_SHIFT.${name} is not a function`);
+      return (fn as (a?: string) => T)(value) as T;
+    },
+    { method, arg },
+  );
 }
 
 /** Snapshot of the hook's data properties (functions are not cloneable). */
@@ -87,7 +104,11 @@ export async function tap(page: Page, gx: number, gy: number): Promise<void> {
 }
 
 /** Poll scene state until the predicate passes. */
-export async function sceneSatisfies(page: Page, predicate: (s: SceneState) => boolean, timeoutMs = 40_000): Promise<SceneState> {
+export async function sceneSatisfies(
+  page: Page,
+  predicate: (s: SceneState) => boolean,
+  timeoutMs = 40_000,
+): Promise<SceneState> {
   const start = Date.now();
   for (;;) {
     const scene = await activeScene(page);
@@ -98,7 +119,13 @@ export async function sceneSatisfies(page: Page, predicate: (s: SceneState) => b
 }
 
 /** Hold a button until the predicate over scene state passes, then release. */
-export async function holdUntil(page: Page, gx: number, gy: number, predicate: (s: SceneState) => boolean, timeoutMs = 40_000): Promise<void> {
+export async function holdUntil(
+  page: Page,
+  gx: number,
+  gy: number,
+  predicate: (s: SceneState) => boolean,
+  timeoutMs = 40_000,
+): Promise<void> {
   const { left, top, sx, sy } = await canvasScale(page);
   await page.mouse.move(left + gx * sx, top + gy * sy);
   await page.mouse.down();

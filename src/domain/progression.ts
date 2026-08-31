@@ -12,7 +12,12 @@ export function starsFor(total: number): number {
 }
 
 export const SKILLS = [
-  'recipe-knowledge', 'espresso-extraction', 'milk-texturing', 'order-accuracy', 'workflow', 'waste-control',
+  'recipe-knowledge',
+  'espresso-extraction',
+  'milk-texturing',
+  'order-accuracy',
+  'workflow',
+  'waste-control',
 ] as const;
 export type SkillId = (typeof SKILLS)[number];
 
@@ -23,10 +28,18 @@ export function updateEma(current: number | undefined, sample: number): number {
 }
 
 const EXTRACTION_FAULTS: FeedbackId[] = [
-  'EXTRACTION_TOO_FAST', 'EXTRACTION_TOO_SLOW', 'DOSE_LOW', 'DOSE_HIGH', 'UNEVEN_TAMP',
+  'EXTRACTION_TOO_FAST',
+  'EXTRACTION_TOO_SLOW',
+  'DOSE_LOW',
+  'DOSE_HIGH',
+  'UNEVEN_TAMP',
 ];
 const MILK_FAULTS: FeedbackId[] = [
-  'MILK_TOO_HOT', 'FOAM_TOO_THICK', 'FOAM_TOO_THIN', 'STEAM_WAND_NOT_PURGED', 'JUG_TOO_LARGE',
+  'MILK_TOO_HOT',
+  'FOAM_TOO_THICK',
+  'FOAM_TOO_THIN',
+  'STEAM_WAND_NOT_PURGED',
+  'JUG_TOO_LARGE',
 ];
 
 /**
@@ -104,14 +117,58 @@ export function habitHints(save: SaveData): string[] {
 
 /** Fault tags that push each drink's adaptive weight up (see drinkWeight). */
 export const TAG_BIAS: Record<DrinkId, FeedbackId[]> = {
-  espresso: ['EXTRACTION_TOO_FAST', 'EXTRACTION_TOO_SLOW', 'DOSE_LOW', 'DOSE_HIGH', 'UNEVEN_TAMP', 'STEAM_WAND_NOT_PURGED'],
-  americano: ['EXTRACTION_TOO_FAST', 'EXTRACTION_TOO_SLOW', 'DOSE_LOW', 'DOSE_HIGH', 'UNEVEN_TAMP', 'STEAM_WAND_NOT_PURGED'],
-  latte: ['EXTRACTION_TOO_FAST', 'EXTRACTION_TOO_SLOW', 'DOSE_LOW', 'DOSE_HIGH', 'UNEVEN_TAMP', 'STEAM_WAND_NOT_PURGED',
-    'WRONG_MILK', 'MILK_TOO_HOT', 'FOAM_TOO_THICK', 'FOAM_TOO_THIN'],
-  cappuccino: ['EXTRACTION_TOO_FAST', 'EXTRACTION_TOO_SLOW', 'DOSE_LOW', 'DOSE_HIGH', 'UNEVEN_TAMP', 'STEAM_WAND_NOT_PURGED',
-    'WRONG_MILK', 'MILK_TOO_HOT', 'FOAM_TOO_THICK', 'FOAM_TOO_THIN'],
-  'flat-white': ['EXTRACTION_TOO_FAST', 'EXTRACTION_TOO_SLOW', 'DOSE_LOW', 'DOSE_HIGH', 'UNEVEN_TAMP', 'STEAM_WAND_NOT_PURGED',
-    'WRONG_MILK', 'MILK_TOO_HOT', 'FOAM_TOO_THICK', 'FOAM_TOO_THIN'],
+  espresso: [
+    'EXTRACTION_TOO_FAST',
+    'EXTRACTION_TOO_SLOW',
+    'DOSE_LOW',
+    'DOSE_HIGH',
+    'UNEVEN_TAMP',
+    'STEAM_WAND_NOT_PURGED',
+  ],
+  americano: [
+    'EXTRACTION_TOO_FAST',
+    'EXTRACTION_TOO_SLOW',
+    'DOSE_LOW',
+    'DOSE_HIGH',
+    'UNEVEN_TAMP',
+    'STEAM_WAND_NOT_PURGED',
+  ],
+  latte: [
+    'EXTRACTION_TOO_FAST',
+    'EXTRACTION_TOO_SLOW',
+    'DOSE_LOW',
+    'DOSE_HIGH',
+    'UNEVEN_TAMP',
+    'STEAM_WAND_NOT_PURGED',
+    'WRONG_MILK',
+    'MILK_TOO_HOT',
+    'FOAM_TOO_THICK',
+    'FOAM_TOO_THIN',
+  ],
+  cappuccino: [
+    'EXTRACTION_TOO_FAST',
+    'EXTRACTION_TOO_SLOW',
+    'DOSE_LOW',
+    'DOSE_HIGH',
+    'UNEVEN_TAMP',
+    'STEAM_WAND_NOT_PURGED',
+    'WRONG_MILK',
+    'MILK_TOO_HOT',
+    'FOAM_TOO_THICK',
+    'FOAM_TOO_THIN',
+  ],
+  'flat-white': [
+    'EXTRACTION_TOO_FAST',
+    'EXTRACTION_TOO_SLOW',
+    'DOSE_LOW',
+    'DOSE_HIGH',
+    'UNEVEN_TAMP',
+    'STEAM_WAND_NOT_PURGED',
+    'WRONG_MILK',
+    'MILK_TOO_HOT',
+    'FOAM_TOO_THICK',
+    'FOAM_TOO_THIN',
+  ],
 };
 
 /** Adaptive drink weight: clamp(1 + 0.1 × Σ biased fault counts, 1, 3). */
@@ -147,7 +204,11 @@ export function rankFor(save: SaveData): 'trainee' | 'barista' {
 }
 
 /** Fold a finished level's reports into progress, rank and stats. Returns the level average and stars. */
-export function applyLevelResult(save: SaveData, levelId: string, reports: { total: number }[]): { avg: number; stars: number } {
+export function applyLevelResult(
+  save: SaveData,
+  levelId: string,
+  reports: { total: number }[],
+): { avg: number; stars: number } {
   const avg = reports.length === 0 ? 0 : Math.round(reports.reduce((s, r) => s + r.total, 0) / reports.length);
   const level = levelById(levelId);
   if (level == null) return { avg, stars: 0 };

@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { callHook, canvasScale, clearSave, readSave, sceneSatisfies, shiftUnlockedSave, tap, waitForBoot, writeSave } from './helpers';
+import {
+  callHook,
+  canvasScale,
+  clearSave,
+  readSave,
+  sceneSatisfies,
+  shiftUnlockedSave,
+  tap,
+  waitForBoot,
+  writeSave,
+} from './helpers';
 import { BAR_Y, COL_X, ROW_Y, TABS_Y } from '../../src/game/layout';
 import { SMALL_JUG_CAPACITY_ML, VESSEL_CAPACITY_ML } from '../../src/domain/recipes';
 
@@ -41,7 +51,7 @@ test.describe('regressions', () => {
 
   test('vessels have a capacity: milk and water stop at the brim', async ({ page }) => {
     await startLevel(page, 'L3');
-    await tap(page, COL_X[1], TABS_Y);   // milk station
+    await tap(page, COL_X[1], TABS_Y); // milk station
     await tap(page, COL_X[0], ROW_Y[0]); // small jug
 
     // Hold Fill far longer than the jug could possibly take. At 90 ml/s an unclamped
@@ -58,7 +68,7 @@ test.describe('regressions', () => {
     expect(milk.fillMl).toBeLessThanOrEqual(SMALL_JUG_CAPACITY_ML);
 
     // Same for water in the assembly station.
-    await tap(page, COL_X[2], TABS_Y);   // assembly
+    await tap(page, COL_X[2], TABS_Y); // assembly
     await tap(page, COL_X[0], ROW_Y[0]); // demitasse, the smallest vessel
     await page.mouse.move(left + COL_X[1] * sx, top + ROW_Y[2] * sy);
     await page.mouse.down();
@@ -88,7 +98,7 @@ test.describe('regressions', () => {
     });
 
     const sentence = texts.find((t) => t.includes('.') && t.split(' ').length > 3) ?? '';
-    expect(sentence).not.toMatch(/[A-Z]{3,}_[A-Z]/);   // no raw fault ids leaking through
+    expect(sentence).not.toMatch(/[A-Z]{3,}_[A-Z]/); // no raw fault ids leaking through
     expect(sentence).toMatch(/^[A-Z]/);
     expect(sentence.trim().endsWith('.')).toBe(true);
     expect(texts.some((t) => t.includes('Order match'))).toBe(true);
@@ -96,7 +106,7 @@ test.describe('regressions', () => {
 
   test('binning a drink needs a second tap and can be undone', async ({ page }) => {
     await startLevel(page, 'L1');
-    await tap(page, COL_X[2], TABS_Y);   // assembly station
+    await tap(page, COL_X[2], TABS_Y); // assembly station
     await tap(page, COL_X[0], ROW_Y[0]); // demitasse
     expect((await sceneSatisfies(page, (s2) => s2.asm.vessel != null)).asm.vessel).toBe('demitasse');
 
@@ -117,7 +127,7 @@ test.describe('regressions', () => {
 
   test('the feedback card blocks taps on the controls beneath it', async ({ page }) => {
     await startLevel(page, 'L1');
-    await tap(page, COL_X[2], TABS_Y);   // assembly station
+    await tap(page, COL_X[2], TABS_Y); // assembly station
     await tap(page, COL_X[0], ROW_Y[0]); // demitasse
     const chosen = await sceneSatisfies(page, (s2) => s2.asm.vessel != null, 10_000);
     expect(chosen.asm.vessel).toBe('demitasse');
@@ -192,7 +202,7 @@ test.describe('regressions', () => {
 
   test('switching station mid-hold does not leave the milk pouring for ever', async ({ page }) => {
     await startLevel(page, 'L3');
-    await tap(page, COL_X[1], TABS_Y);   // milk station
+    await tap(page, COL_X[1], TABS_Y); // milk station
     await tap(page, COL_X[1], ROW_Y[0]); // large jug
 
     // Start pouring and let some milk in.
@@ -238,7 +248,12 @@ test.describe('regressions', () => {
         children: { getByName: (n: string) => { text?: string } | null };
       };
       const order = (drink: string) => ({
-        drink, size: 'small', shots: 1, milk: 'whole', extraHot: false, takeaway: false,
+        drink,
+        size: 'small',
+        shots: 1,
+        milk: 'whole',
+        extraHot: false,
+        takeaway: false,
       });
       scene.orders = Array.from({ length: 7 }, () => order('espresso'));
       const read = (index: number): string => {
@@ -270,7 +285,12 @@ test.describe('regressions', () => {
         renderTicket: () => void;
       };
       const order = (drink: string) => ({
-        drink, size: 'small', shots: 1, milk: 'whole', extraHot: false, takeaway: false,
+        drink,
+        size: 'small',
+        shots: 1,
+        milk: 'whole',
+        extraHot: false,
+        takeaway: false,
       });
       scene.orders = [order('espresso'), order('latte'), order('americano'), order('cappuccino')];
       scene.drinkIndex = 2; // second pair, first drink
@@ -372,8 +392,12 @@ test.describe('touch targets on the smallest supported phone', () => {
       const w = window as unknown as Record<string, unknown>;
       const hook = w.__COFFEE_SHIFT as { game: { scene: { getScene: (k: string) => unknown } } };
       const scene = hook.game.scene.getScene('game') as {
-        controlsView?: { list: { x: number; y: number; list: { type: string; width: number; height: number; text?: string }[] }[] };
-        children: { getByName: (n: string) => { x: number; getBounds: () => { y: number; width: number; height: number } } | null };
+        controlsView?: {
+          list: { x: number; y: number; list: { type: string; width: number; height: number; text?: string }[] }[];
+        };
+        children: {
+          getByName: (n: string) => { x: number; getBounds: () => { y: number; width: number; height: number } } | null;
+        };
       };
       const canvas = document.querySelector('#game-canvas canvas') as HTMLCanvasElement;
       const rect = canvas.getBoundingClientRect();
@@ -385,15 +409,24 @@ test.describe('touch targets on the smallest supported phone', () => {
         if (bg == null) continue;
         const label = obj.list.find((c) => c.type === 'Text')?.text ?? '?';
         out.push({
-          label, w: bg.width * sx, h: bg.height * sy,
-          top: (obj.y - bg.height / 2) * sy, bottom: (obj.y + bg.height / 2) * sy,
+          label,
+          w: bg.width * sx,
+          h: bg.height * sy,
+          top: (obj.y - bg.height / 2) * sy,
+          bottom: (obj.y + bg.height / 2) * sy,
         });
       }
       for (const id of ['espresso', 'milk', 'assembly']) {
         const tab = scene.children.getByName(`tab-${id}`);
         if (tab == null) continue;
         const b = tab.getBounds();
-        out.push({ label: `tab:${id}`, w: b.width * sx, h: b.height * sy, top: b.y * sy, bottom: (b.y + b.height) * sy });
+        out.push({
+          label: `tab:${id}`,
+          w: b.width * sx,
+          h: b.height * sy,
+          top: b.y * sy,
+          bottom: (b.y + b.height) * sy,
+        });
       }
       return { controls: out, canvasHeight: rect.height, viewportHeight: window.innerHeight };
     });
@@ -423,61 +456,66 @@ test.describe('contrast', () => {
     await page.goto('/');
     await waitForBoot(page);
 
-    const measure = async (): Promise<string[]> => page.evaluate(() => {
-      const parse = (c: string): [number, number, number] => {
-        const m = c.match(/rgba?\(([^)]+)\)/);
-        if (m == null) return [0, 0, 0];
-        const [r, g, b] = (m[1] ?? '').split(',').map((v) => parseFloat(v));
-        return [r ?? 0, g ?? 0, b ?? 0];
-      };
-      const lum = ([r, g, b]: [number, number, number]): number => {
-        const f = (v: number): number => {
-          const c = v / 255;
-          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    const measure = async (): Promise<string[]> =>
+      page.evaluate(() => {
+        const parse = (c: string): [number, number, number] => {
+          const m = c.match(/rgba?\(([^)]+)\)/);
+          if (m == null) return [0, 0, 0];
+          const [r, g, b] = (m[1] ?? '').split(',').map((v) => parseFloat(v));
+          return [r ?? 0, g ?? 0, b ?? 0];
         };
-        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-      };
-      const bgOf = (el: Element): [number, number, number] => {
-        let node: Element | null = el;
-        while (node != null) {
-          const bg = getComputedStyle(node).backgroundColor;
-          if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return parse(bg);
-          node = node.parentElement;
+        const lum = ([r, g, b]: [number, number, number]): number => {
+          const f = (v: number): number => {
+            const c = v / 255;
+            return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          };
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+        const bgOf = (el: Element): [number, number, number] => {
+          let node: Element | null = el;
+          while (node != null) {
+            const bg = getComputedStyle(node).backgroundColor;
+            if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return parse(bg);
+            node = node.parentElement;
+          }
+          return [253, 246, 236];
+        };
+        const out: string[] = [];
+        const seen = new Set<string>();
+        for (const el of document.querySelectorAll('#overlay *')) {
+          const text = (el.textContent ?? '').trim();
+          if (text.length === 0 || el.children.length > 0) continue;
+          // Decorative separators carry no information and are aria-hidden, so WCAG's
+          // contrast minimum does not apply to them.
+          if (el.closest('[aria-hidden="true"]') != null) continue;
+          const style = getComputedStyle(el);
+          if (style.visibility === 'hidden' || style.display === 'none') continue;
+          const size = parseFloat(style.fontSize);
+          const bold = parseInt(style.fontWeight, 10) >= 700;
+          const large = size >= 24 || (size >= 18.66 && bold);
+          const need = large ? 3 : 4.5;
+          const la = lum(parse(style.color));
+          const lb = lum(bgOf(el));
+          const ratio = (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+          const key = `${style.color}|${size}`;
+          if (ratio < need && !seen.has(key)) {
+            seen.add(key);
+            out.push(`"${text.slice(0, 24)}" ${style.color} ${size}px -> ${ratio.toFixed(2)}:1 (wymagane ${need})`);
+          }
         }
-        return [253, 246, 236];
-      };
-      const out: string[] = [];
-      const seen = new Set<string>();
-      for (const el of document.querySelectorAll('#overlay *')) {
-        const text = (el.textContent ?? '').trim();
-        if (text.length === 0 || el.children.length > 0) continue;
-        // Decorative separators carry no information and are aria-hidden, so WCAG's
-        // contrast minimum does not apply to them.
-        if (el.closest('[aria-hidden="true"]') != null) continue;
-        const style = getComputedStyle(el);
-        if (style.visibility === 'hidden' || style.display === 'none') continue;
-        const size = parseFloat(style.fontSize);
-        const bold = parseInt(style.fontWeight, 10) >= 700;
-        const large = size >= 24 || (size >= 18.66 && bold);
-        const need = large ? 3 : 4.5;
-        const la = lum(parse(style.color));
-        const lb = lum(bgOf(el));
-        const ratio = (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-        const key = `${style.color}|${size}`;
-        if (ratio < need && !seen.has(key)) {
-          seen.add(key);
-          out.push(`"${text.slice(0, 24)}" ${style.color} ${size}px -> ${ratio.toFixed(2)}:1 (wymagane ${need})`);
-        }
-      }
-      return out;
-    });
+        return out;
+      });
 
     const failures: string[] = [];
-    failures.push(...await measure());
-    for (const [action, back] of [['mode', true], ['recipe-book', true], ['settings', true]] as const) {
+    failures.push(...(await measure()));
+    for (const [action, back] of [
+      ['mode', true],
+      ['recipe-book', true],
+      ['settings', true],
+    ] as const) {
       await page.click(`[data-action="${action}"]`);
       await page.waitForTimeout(250);
-      failures.push(...await measure());
+      failures.push(...(await measure()));
       if (back) {
         await page.goto('/');
         await waitForBoot(page);
@@ -535,7 +573,7 @@ test.describe('accessibility', () => {
     await expect(canvas).toHaveAttribute('role', 'img');
     expect((await canvas.getAttribute('aria-label')) ?? '').toContain('Coffee Shift');
 
-    await tap(page, 195, BAR_Y);   // arms Bin, which toasts
+    await tap(page, 195, BAR_Y); // arms Bin, which toasts
     await page.waitForTimeout(400);
     const live = page.locator('#a11y-live');
     await expect(live).toHaveAttribute('aria-live', 'polite');

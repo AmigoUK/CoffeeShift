@@ -1,8 +1,20 @@
-import type { DrinkOrder, FeedbackId, PreparedDrink, ScoreReport, ScoreSummary, SizeId, SummaryOpenerId } from './types';
+import type {
+  DrinkOrder,
+  FeedbackId,
+  PreparedDrink,
+  ScoreReport,
+  ScoreSummary,
+  SizeId,
+  SummaryOpenerId,
+} from './types';
 import { MILK_TEMP, EXTRACTION, SMALL_JUG_MAX_ML, parFor } from './recipes';
 import type { Recipe } from './recipes';
 
-interface Check { earned: number; possible: number; applicable: boolean }
+interface Check {
+  earned: number;
+  possible: number;
+  applicable: boolean;
+}
 
 function chk(earned: number, possible: number, applicable = true): Check {
   return { earned: Math.max(0, Math.min(earned, possible)), possible, applicable };
@@ -65,7 +77,8 @@ function timeScore(order: DrinkOrder, prepared: PreparedDrink): number {
 
 function wasteScore(prepared: PreparedDrink): number {
   const count = (tag: string) => prepared.wasteEvents.filter((e) => e === tag).length;
-  const penalty = 2 * count('binned-drink') + 2 * count('lost-customer') + 1 * count('emptied-jug') + 1 * count('jug-overflow');
+  const penalty =
+    2 * count('binned-drink') + 2 * count('lost-customer') + 1 * count('emptied-jug') + 1 * count('jug-overflow');
   return Math.max(0, 5 - penalty);
 }
 
@@ -83,16 +96,15 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
   const drinkOk = prepared.drink === order.drink;
   const expectedVessel = order.takeaway ? 'takeaway-cup' : drink.houseVessel;
   const vesselOk = prepared.vessel === expectedVessel;
-  const milkOk = drink.milkDrink
-    ? prepared.milk?.typeUsed === order.milk
-    : prepared.milk == null;
+  const milkOk = drink.milkDrink ? prepared.milk?.typeUsed === order.milk : prepared.milk == null;
   const inferredSize = inferSize(drink, prepared);
   const sizeOk = inferredSize !== null && inferredSize === order.size;
   const shotsOk = prepared.pulls.length === order.shots;
-  const extraHotOk = order.extraHot
-    && prepared.milk?.tempC != null
-    && prepared.milk.tempC >= MILK_TEMP.extraHot.target[0]
-    && prepared.milk.tempC <= MILK_TEMP.extraHot.target[1];
+  const extraHotOk =
+    order.extraHot &&
+    prepared.milk?.tempC != null &&
+    prepared.milk.tempC >= MILK_TEMP.extraHot.target[0] &&
+    prepared.milk.tempC <= MILK_TEMP.extraHot.target[1];
 
   const orderMatch = allocate(45, [
     chk(drinkOk ? 15 : 0, 15),
@@ -105,21 +117,32 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
 
   // ---- recipe /25: foam 10, milk volume 5, water 5, assembly 5, jug 3 ----
   const milkUsed = drink.milkDrink && prepared.milk != null;
-  const foamOk = milkUsed && drink.foamOkCm != null
-    && prepared.milk != null
-    && prepared.milk.foamCm >= drink.foamOkCm[0]
-    && prepared.milk.foamCm <= drink.foamOkCm[1];
+  const foamOk =
+    milkUsed &&
+    drink.foamOkCm != null &&
+    prepared.milk != null &&
+    prepared.milk.foamCm >= drink.foamOkCm[0] &&
+    prepared.milk.foamCm <= drink.foamOkCm[1];
   const milkSpec = drink.milkVolumeMl[order.size] ?? null;
-  const milkVolumeOk = milkUsed && milkSpec != null && prepared.milk?.volumeMl != null
-    && Math.abs(prepared.milk.volumeMl - milkSpec) <= 0.1 * milkSpec;
+  const milkVolumeOk =
+    milkUsed &&
+    milkSpec != null &&
+    prepared.milk?.volumeMl != null &&
+    Math.abs(prepared.milk.volumeMl - milkSpec) <= 0.1 * milkSpec;
   const waterSpec = drink.waterVolumeMl[order.size] ?? null;
-  const waterOk = drink.drink === 'americano' && prepared.waterMl != null && waterSpec != null
-    && Math.abs(prepared.waterMl - waterSpec) <= 0.1 * waterSpec;
+  const waterOk =
+    drink.drink === 'americano' &&
+    prepared.waterMl != null &&
+    waterSpec != null &&
+    Math.abs(prepared.waterMl - waterSpec) <= 0.1 * waterSpec;
   const assemblyOk = JSON.stringify(prepared.assemblyActions) === JSON.stringify(drink.assembly);
   const jugVolume = prepared.milk?.volumeMl ?? null;
-  const jugOk = milkUsed && jugVolume != null && prepared.milk?.jug != null
-    && ((jugVolume <= SMALL_JUG_MAX_ML && prepared.milk.jug === 'small-jug')
-      || (jugVolume > SMALL_JUG_MAX_ML && prepared.milk.jug === 'large-jug'));
+  const jugOk =
+    milkUsed &&
+    jugVolume != null &&
+    prepared.milk?.jug != null &&
+    ((jugVolume <= SMALL_JUG_MAX_ML && prepared.milk.jug === 'small-jug') ||
+      (jugVolume > SMALL_JUG_MAX_ML && prepared.milk.jug === 'large-jug'));
 
   const recipeScore = allocate(25, [
     chk(foamOk ? 10 : 0, 10, Boolean(milkUsed && drink.foamOkCm != null)),
@@ -131,13 +154,13 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
 
   // ---- technique /15: time band 5, grind 3, dose 3, purge 2, tamp 2 ----
   const pulls = prepared.pulls;
-  const timeOk = pulls.length > 0 && pulls.every(
-    (p) => p.seconds >= EXTRACTION.timeBandSeconds[0] && p.seconds <= EXTRACTION.timeBandSeconds[1],
-  );
+  const timeOk =
+    pulls.length > 0 &&
+    pulls.every((p) => p.seconds >= EXTRACTION.timeBandSeconds[0] && p.seconds <= EXTRACTION.timeBandSeconds[1]);
   const grindOk = pulls.length > 0 && pulls.every((p) => p.grind === EXTRACTION.correctGrind);
-  const doseOk = pulls.length > 0 && pulls.every(
-    (p) => p.doseGrams >= EXTRACTION.doseBandGrams[0] && p.doseGrams <= EXTRACTION.doseBandGrams[1],
-  );
+  const doseOk =
+    pulls.length > 0 &&
+    pulls.every((p) => p.doseGrams >= EXTRACTION.doseBandGrams[0] && p.doseGrams <= EXTRACTION.doseBandGrams[1]);
   const tampOk = pulls.length > 0 && pulls.every((p) => p.tampOk);
   const purgeApplicable = drink.milkDrink && prepared.milk != null;
 
@@ -185,9 +208,8 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
   finalFeedback.push(...faults);
 
   // ---- summary, as data for the UI to phrase ----
-  const opener: SummaryOpenerId = faults.length === 0 && total >= 98
-    ? 'perfect'
-    : correctDrink ? 'correctRecipe' : 'wrongDrink';
+  const opener: SummaryOpenerId =
+    faults.length === 0 && total >= 98 ? 'perfect' : correctDrink ? 'correctRecipe' : 'wrongDrink';
   const summary: ScoreSummary = { opener, clauses: faults };
 
   return {

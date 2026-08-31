@@ -1,7 +1,40 @@
 import Phaser from 'phaser';
-import type { DrinkOrder, ExtractionPull, FeedbackId, JugId, MilkId, MilkResult, PreparedDrink, ScoreReport, VesselId } from '../domain/types';
-import { EXTRACTION, LARGE_JUG_CAPACITY_ML, MILK_TEMP, SMALL_JUG_CAPACITY_ML, VESSEL_CAPACITY_ML, parFor, recipeFor } from '../domain/recipes';
-import { BAR_Y, BTN, COL_X, CONTROLS_TOP, FEEDBACK, GAME_HEIGHT, GAME_WIDTH, GUIDED_Y, ROW_Y, STATION_STATUS_Y, TAB_PADDING, TABS_Y, TOAST_Y, TOP_PANEL } from './layout';
+import type {
+  DrinkOrder,
+  ExtractionPull,
+  FeedbackId,
+  JugId,
+  MilkId,
+  MilkResult,
+  PreparedDrink,
+  ScoreReport,
+  VesselId,
+} from '../domain/types';
+import {
+  EXTRACTION,
+  LARGE_JUG_CAPACITY_ML,
+  MILK_TEMP,
+  SMALL_JUG_CAPACITY_ML,
+  VESSEL_CAPACITY_ML,
+  parFor,
+  recipeFor,
+} from '../domain/recipes';
+import {
+  BAR_Y,
+  BTN,
+  COL_X,
+  CONTROLS_TOP,
+  FEEDBACK,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+  GUIDED_Y,
+  ROW_Y,
+  STATION_STATUS_Y,
+  TAB_PADDING,
+  TABS_Y,
+  TOAST_Y,
+  TOP_PANEL,
+} from './layout';
 import { generateOrders, mulberry32, archetypeForOrderIndex, orderLine } from '../domain/orders';
 import { levelById } from '../domain/levels';
 import type { LevelDef } from '../domain/levels';
@@ -11,7 +44,17 @@ import { loadSave, writeSave } from '../domain/save';
 import type { SaveData } from '../domain/save';
 import { sfx } from './audio';
 import { getTimeScale } from './timeScale';
-import { BREAKDOWN_COPY, FEEDBACK_LABELS, GAME_COPY, GUIDED_COPY, MENU, STATION_COPY, STATUS_COPY, TOAST_COPY, summarySentence } from '../ui/copy';
+import {
+  BREAKDOWN_COPY,
+  FEEDBACK_LABELS,
+  GAME_COPY,
+  GUIDED_COPY,
+  MENU,
+  STATION_COPY,
+  STATUS_COPY,
+  TOAST_COPY,
+  summarySentence,
+} from '../ui/copy';
 import { announce } from '../ui/live-region';
 export interface LevelCompletePayload {
   levelId: string;
@@ -68,19 +111,54 @@ const BIN_ARM_SECONDS = 3;
 
 const GRIND_FACTOR: Record<string, number> = { fine: 1.0, medium: 1.6, coarse: 2.2 };
 const VESSEL_DRINK: Record<string, string> = {
-  demitasse: 'espresso', 'americano-mug': 'americano', 'latte-glass': 'latte',
-  'cappuccino-cup': 'cappuccino', 'flat-white-cup': 'flat-white',
+  demitasse: 'espresso',
+  'americano-mug': 'americano',
+  'latte-glass': 'latte',
+  'cappuccino-cup': 'cappuccino',
+  'flat-white-cup': 'flat-white',
 };
 const COL = { panel: 0xf5f0e6, dark: 0x3b2417, coffee: 0x6f4e37, teal: 0x2f8f83, red: 0xc0392b, green: 0x3a7d44 };
 
 function freshExtraction(): ExtractionState {
-  return { grind: 'fine', doseGrams: 14, tampKg: 0, tampPeakKg: 0, tampGood: false, tampHeld: false, brewing: false, brewSeconds: 0, yieldGrams: 0, pulls: [] };
+  return {
+    grind: 'fine',
+    doseGrams: 14,
+    tampKg: 0,
+    tampPeakKg: 0,
+    tampGood: false,
+    tampHeld: false,
+    brewing: false,
+    brewSeconds: 0,
+    yieldGrams: 0,
+    pulls: [],
+  };
 }
 function freshMilk(level: LevelDef): MilkState {
-  return { used: false, type: level.milks[0] ?? 'whole', jug: null, fillMl: 0, filling: false, purged: false, steaming: false, wandDepth: 'shallow', tempC: 5, foamCm: 0, ruined: false, hotWarned: false };
+  return {
+    used: false,
+    type: level.milks[0] ?? 'whole',
+    jug: null,
+    fillMl: 0,
+    filling: false,
+    purged: false,
+    steaming: false,
+    wandDepth: 'shallow',
+    tempC: 5,
+    foamCm: 0,
+    ruined: false,
+    hotWarned: false,
+  };
 }
 function freshAssembly(): AssemblyState {
-  return { vessel: null, shotsUsed: 0, waterMl: null, milkPoured: false, actions: [], pouringWater: false, undoStack: [] };
+  return {
+    vessel: null,
+    shotsUsed: 0,
+    waterMl: null,
+    milkPoured: false,
+    actions: [],
+    pouringWater: false,
+    undoStack: [],
+  };
 }
 
 export class GameScene extends Phaser.Scene {
@@ -120,7 +198,11 @@ export class GameScene extends Phaser.Scene {
   create(data: { levelId?: string }): void {
     const level = data.levelId != null ? levelById(data.levelId) : undefined;
     if (level == null) {
-      this.game.events.emit('level-complete', { levelId: '', reports: [], masteryBefore: {} } satisfies LevelCompletePayload);
+      this.game.events.emit('level-complete', {
+        levelId: '',
+        reports: [],
+        masteryBefore: {},
+      } satisfies LevelCompletePayload);
       this.scene.stop();
       return;
     }
@@ -150,14 +232,22 @@ export class GameScene extends Phaser.Scene {
     this.wasteEvents = [];
 
     this.add.rectangle(195, TOP_PANEL.height / 2, 390, TOP_PANEL.height, COL.panel).setStrokeStyle(2, COL.dark);
-    this.add.rectangle(195, (CONTROLS_TOP + GAME_HEIGHT) / 2, 390, GAME_HEIGHT - CONTROLS_TOP, COL.panel).setStrokeStyle(2, COL.dark);
+    this.add
+      .rectangle(195, (CONTROLS_TOP + GAME_HEIGHT) / 2, 390, GAME_HEIGHT - CONTROLS_TOP, COL.panel)
+      .setStrokeStyle(2, COL.dark);
     this.buildTicket();
     this.buildStationTabs();
     this.controlsView = this.add.container(0, 0);
     this.buildBottomRow();
-    this.guidedText = this.add.text(195, GUIDED_Y, '', {
-      fontSize: '12px', color: '#1d6b61', align: 'center', wordWrap: { width: 370 }, fontStyle: 'bold',
-    }).setOrigin(0.5, 0);
+    this.guidedText = this.add
+      .text(195, GUIDED_Y, '', {
+        fontSize: '12px',
+        color: '#1d6b61',
+        align: 'center',
+        wordWrap: { width: 370 },
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5, 0);
     this.startDrink();
     if (level.parallelPrep) {
       this.time.delayedCall(1500, () => this.toast(GAME_COPY.parallelTip));
@@ -169,16 +259,29 @@ export class GameScene extends Phaser.Scene {
   private buildTicket(): void {
     const archetype = 'customer-regular-1';
     this.add.image(60, 105, archetype).setScale(3).setName('customer-sprite');
-    this.add.text(135, 40, '', {
-      wordWrap: { width: 225 }, fontSize: '13px', color: '#2d2016', backgroundColor: '#ffffff', padding: { x: 8, y: 6 },
-    }).setName('speech-bubble');
+    this.add
+      .text(135, 40, '', {
+        wordWrap: { width: 225 },
+        fontSize: '13px',
+        color: '#2d2016',
+        backgroundColor: '#ffffff',
+        padding: { x: 8, y: 6 },
+      })
+      .setName('speech-bubble');
 
     this.ticketPanel = this.add.container(195, 205);
     const bg = this.add.rectangle(0, 0, 360, 92, 0xffffff).setStrokeStyle(2, COL.coffee).setName('ticket-bg');
     this.ticketPanel.add(bg);
-    this.ticketPanel.add(this.add.text(-170, -40, GAME_COPY.ticket, { fontSize: '12px', color: '#6f4e37', fontStyle: 'bold' }));
+    this.ticketPanel.add(
+      this.add.text(-170, -40, GAME_COPY.ticket, { fontSize: '12px', color: '#6f4e37', fontStyle: 'bold' }),
+    );
     for (const key of ['drink', 'second', 'milkTemp', 'serve']) {
-      const label = this.add.text(-170, key === 'drink' ? -20 : key === 'second' ? 0 : key === 'milkTemp' ? 22 : 42, '', { fontSize: '11px', color: '#2d2016', wordWrap: { width: 340 } });
+      const label = this.add.text(
+        -170,
+        key === 'drink' ? -20 : key === 'second' ? 0 : key === 'milkTemp' ? 22 : 42,
+        '',
+        { fontSize: '11px', color: '#2d2016', wordWrap: { width: 340 } },
+      );
       this.ticketFields[key] = label;
       this.ticketPanel.add(label);
     }
@@ -187,11 +290,20 @@ export class GameScene extends Phaser.Scene {
     // Patience is never colour-only: icon + label travel with the bar.
     this.add.text(15, TOP_PANEL.patienceLabelY, '\u23F1 Patience', { fontSize: '9px', color: '#7a6a5c' });
     this.add.rectangle(195, TOP_PANEL.patienceBarY, 360, 6, 0xe7dcc9);
-    this.patienceBar = this.add.rectangle(15, TOP_PANEL.patienceBarY, 360, 6, COL.teal).setOrigin(0, 0.5).setName('patience-bar');
+    this.patienceBar = this.add
+      .rectangle(15, TOP_PANEL.patienceBarY, 360, 6, COL.teal)
+      .setOrigin(0, 0.5)
+      .setName('patience-bar');
 
-    const exit = this.add.text(378, 14, '\u2630 Menu', {
-      fontSize: '12px', color: '#fdf6ec', backgroundColor: '#6f4e37', padding: { x: 8, y: 5 },
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    const exit = this.add
+      .text(378, 14, '\u2630 Menu', {
+        fontSize: '12px',
+        color: '#fdf6ec',
+        backgroundColor: '#6f4e37',
+        padding: { x: 8, y: 5 },
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
     exit.on('pointerdown', () => {
       this.game.events.emit('exit-level');
       this.scene.stop();
@@ -200,12 +312,21 @@ export class GameScene extends Phaser.Scene {
 
   private buildStationTabs(): void {
     const tabs: ['espresso' | 'milk' | 'assembly', string][] = [
-      ['espresso', GAME_COPY.stationEspresso], ['milk', GAME_COPY.stationMilk], ['assembly', GAME_COPY.stationAssembly],
+      ['espresso', GAME_COPY.stationEspresso],
+      ['milk', GAME_COPY.stationMilk],
+      ['assembly', GAME_COPY.stationAssembly],
     ];
     tabs.forEach(([id, label], i) => {
-      const btn = this.add.text(COL_X[i] ?? 65, TABS_Y, label, {
-        fontSize: '14px', color: '#fdf6ec', backgroundColor: '#6f4e37', padding: TAB_PADDING,
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setName(`tab-${id}`);
+      const btn = this.add
+        .text(COL_X[i] ?? 65, TABS_Y, label, {
+          fontSize: '14px',
+          color: '#fdf6ec',
+          backgroundColor: '#6f4e37',
+          padding: TAB_PADDING,
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .setName(`tab-${id}`);
       btn.on('pointerdown', () => this.switchStation(id));
     });
     this.stationView = this.add.container(0, 0);
@@ -213,22 +334,53 @@ export class GameScene extends Phaser.Scene {
 
   private buildBottomRow(): void {
     this.controlsBand?.destroy(true);
-    const undo = this.makeButton(60, BAR_Y, 150, BTN.barH, () => MENU.undo, () => this.undoAssembly());
-    const bin = this.makeButton(195, BAR_Y, 90, BTN.barH,
+    const undo = this.makeButton(
+      60,
+      BAR_Y,
+      150,
+      BTN.barH,
+      () => MENU.undo,
+      () => this.undoAssembly(),
+    );
+    const bin = this.makeButton(
+      195,
+      BAR_Y,
+      90,
+      BTN.barH,
       () => (this.clockGame <= this.binArmedUntil ? MENU.binConfirm : MENU.bin),
-      () => this.binDrink());
-    const serve = this.makeButton(320, BAR_Y, 130, BTN.barH, () => MENU.serve, () => this.serve(), COL.green);
+      () => this.binDrink(),
+    );
+    const serve = this.makeButton(
+      320,
+      BAR_Y,
+      130,
+      BTN.barH,
+      () => MENU.serve,
+      () => this.serve(),
+      COL.green,
+    );
     this.controlsView?.add([undo, bin, serve]);
   }
   private controlsBand: Phaser.GameObjects.Container | null = null;
 
   // ---------- helpers ----------
 
-  private makeButton(x: number, y: number, w: number, h: number, label: () => string, onPress: () => void, fill = COL.coffee, name?: string): Phaser.GameObjects.Container {
+  private makeButton(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    label: () => string,
+    onPress: () => void,
+    fill = COL.coffee,
+    name?: string,
+  ): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     if (name != null) c.setName(name);
     const bg = this.add.rectangle(0, 0, w, h, fill).setStrokeStyle(2, COL.dark).setInteractive({ useHandCursor: true });
-    const text = this.add.text(0, 0, '', { fontSize: '12px', color: '#fdf6ec', align: 'center', wordWrap: { width: w - 12 } }).setOrigin(0.5);
+    const text = this.add
+      .text(0, 0, '', { fontSize: '12px', color: '#fdf6ec', align: 'center', wordWrap: { width: w - 12 } })
+      .setOrigin(0.5);
     text.setText(label());
     c.add([bg, text]);
     c.setData('refresh', () => text.setText(label()));
@@ -239,10 +391,23 @@ export class GameScene extends Phaser.Scene {
     return c;
   }
 
-  private makeHoldButton(x: number, y: number, w: number, h: number, label: () => string, onDown: () => void, onUp: () => void): Phaser.GameObjects.Container {
+  private makeHoldButton(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    label: () => string,
+    onDown: () => void,
+    onUp: () => void,
+  ): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
-    const bg = this.add.rectangle(0, 0, w, h, COL.teal).setStrokeStyle(2, COL.dark).setInteractive({ useHandCursor: true });
-    const text = this.add.text(0, 0, '', { fontSize: '12px', color: '#fdf6ec', align: 'center', wordWrap: { width: w - 12 } }).setOrigin(0.5);
+    const bg = this.add
+      .rectangle(0, 0, w, h, COL.teal)
+      .setStrokeStyle(2, COL.dark)
+      .setInteractive({ useHandCursor: true });
+    const text = this.add
+      .text(0, 0, '', { fontSize: '12px', color: '#fdf6ec', align: 'center', wordWrap: { width: w - 12 } })
+      .setOrigin(0.5);
     text.setText(label());
     c.add([bg, text]);
     c.setData('refresh', () => text.setText(label()));
@@ -274,10 +439,17 @@ export class GameScene extends Phaser.Scene {
   private toast(message: string): void {
     announce(message);
     this.toastText?.destroy();
-    this.toastText = this.add.text(195, TOAST_Y, message, {
-      fontSize: '13px', color: '#fdf6ec', backgroundColor: '#3b2417', padding: { x: 10, y: 6 }, align: 'center',
-      wordWrap: { width: 330 },
-    }).setOrigin(0.5).setDepth(60);
+    this.toastText = this.add
+      .text(195, TOAST_Y, message, {
+        fontSize: '13px',
+        color: '#fdf6ec',
+        backgroundColor: '#3b2417',
+        padding: { x: 10, y: 6 },
+        align: 'center',
+        wordWrap: { width: 330 },
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
     this.time.delayedCall(2200, () => {
       this.toastText?.destroy();
       this.toastText = null;
@@ -364,8 +536,12 @@ export class GameScene extends Phaser.Scene {
     }
     const tempRange = order.extraHot
       ? `${MILK_TEMP.extraHot.target[0]}\u2013${MILK_TEMP.extraHot.target[1]}\u00b0C`
-      : recipe.milkDrink ? `${MILK_TEMP.dairy.target[0]}\u2013${MILK_TEMP.dairy.target[1]}\u00b0C` : '\u2014';
-    this.ticketFields['milkTemp']?.setText(`${GAME_COPY.milk}: ${recipe.milkDrink ? GAME_COPY[order.milk] : '\u2014'} \u00b7 ${GAME_COPY.temperature}: ${tempRange} \u00b7 ${order.takeaway ? GAME_COPY.takeaway : GAME_COPY.inHouse}`);
+      : recipe.milkDrink
+        ? `${MILK_TEMP.dairy.target[0]}\u2013${MILK_TEMP.dairy.target[1]}\u00b0C`
+        : '\u2014';
+    this.ticketFields['milkTemp']?.setText(
+      `${GAME_COPY.milk}: ${recipe.milkDrink ? GAME_COPY[order.milk] : '\u2014'} \u00b7 ${GAME_COPY.temperature}: ${tempRange} \u00b7 ${order.takeaway ? GAME_COPY.takeaway : GAME_COPY.inHouse}`,
+    );
     const queue = this.children.getByName('queue-label') as Phaser.GameObjects.Text | null;
     queue?.setText(`${this.remainingCustomers()} \u25CF`);
   }
@@ -397,23 +573,35 @@ export class GameScene extends Phaser.Scene {
     writeSave(this.save);
     sfx.stopSteam();
     sfx.clink();
-    if (report.total >= 70) { sfx.success(); this.buzz([30, 50, 30]); } else { sfx.failure(); }
+    if (report.total >= 70) {
+      sfx.success();
+      this.buzz([30, 50, 30]);
+    } else {
+      sfx.failure();
+    }
     this.showFeedbackCard(report);
     this.game.events.emit('served', report);
   }
 
   private buildPreparedDrink(order: DrinkOrder): PreparedDrink {
     const vessel = this.asm.vessel ?? 'demitasse';
-    const drink = (vessel === 'takeaway-cup' ? order.drink : VESSEL_DRINK[vessel] ?? order.drink) as PreparedDrink['drink'];
+    const drink = (
+      vessel === 'takeaway-cup' ? order.drink : (VESSEL_DRINK[vessel] ?? order.drink)
+    ) as PreparedDrink['drink'];
     const milkUsed = this.milk.used && !this.milk.ruined;
     const milk: MilkResult | null = milkUsed
       ? {
-          typeUsed: this.milk.type, tempC: this.milk.tempC, foamCm: this.milk.foamCm,
-          wandPurged: this.milk.purged, jug: this.milk.jug, volumeMl: this.milk.fillMl,
+          typeUsed: this.milk.type,
+          tempC: this.milk.tempC,
+          foamCm: this.milk.foamCm,
+          wandPurged: this.milk.purged,
+          jug: this.milk.jug,
+          volumeMl: this.milk.fillMl,
         }
       : null;
     return {
-      drink, vessel,
+      drink,
+      vessel,
       pulls: this.ext.pulls,
       milk,
       waterMl: this.asm.waterMl,
@@ -428,27 +616,58 @@ export class GameScene extends Phaser.Scene {
     const card = this.add.container(FEEDBACK.x, FEEDBACK.y).setDepth(50);
     // A modal that does not swallow input is not modal: taps used to pass straight through
     // to Bin & restart and silently discard the drink the card was reporting on.
-    const scrim = this.add.rectangle(
-      GAME_WIDTH / 2 - FEEDBACK.x, GAME_HEIGHT / 2 - FEEDBACK.y, GAME_WIDTH, GAME_HEIGHT, COL.dark, 0.45,
-    ).setInteractive();
+    const scrim = this.add
+      .rectangle(GAME_WIDTH / 2 - FEEDBACK.x, GAME_HEIGHT / 2 - FEEDBACK.y, GAME_WIDTH, GAME_HEIGHT, COL.dark, 0.45)
+      .setInteractive();
     const bg = this.add.rectangle(0, 0, 370, 470, 0xffffff).setStrokeStyle(3, COL.coffee);
-    const title = this.add.text(0, -200, `${report.total}%`, {
-      fontSize: '34px', color: report.total >= 70 ? '#3a7d44' : '#c0392b', fontStyle: 'bold',
-    }).setOrigin(0.5);
-    const chipTexts = report.feedback.slice(0, 6).map((tag, i) => this.add.text(0, -150 + i * 25, `\u25CF ${FEEDBACK_LABELS[tag]}`, {
-      fontSize: '13px', color: tag === 'PERFECT_ORDER' || tag === 'CORRECT_DRINK' ? '#3a7d44' : '#c0392b',
-    }).setOrigin(0.5));
+    const title = this.add
+      .text(0, -200, `${report.total}%`, {
+        fontSize: '34px',
+        color: report.total >= 70 ? '#3a7d44' : '#c0392b',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    const chipTexts = report.feedback.slice(0, 6).map((tag, i) =>
+      this.add
+        .text(0, -150 + i * 25, `\u25CF ${FEEDBACK_LABELS[tag]}`, {
+          fontSize: '13px',
+          color: tag === 'PERFECT_ORDER' || tag === 'CORRECT_DRINK' ? '#3a7d44' : '#c0392b',
+        })
+        .setOrigin(0.5),
+    );
     const order = this.currentDrink();
     const drinkName = order != null ? recipeFor(order.drink).name : '';
-    const summaryText = this.add.text(0, 20, summarySentence(report.summary, drinkName), {
-      fontSize: '14px', color: '#2d2016', align: 'center', wordWrap: { width: 330 },
-    }).setOrigin(0.5);
-    const bd = this.add.text(0, 110, [
-      BREAKDOWN_COPY.orderMatch(report.breakdown.orderMatch), BREAKDOWN_COPY.recipe(report.breakdown.recipe),
-      BREAKDOWN_COPY.technique(report.breakdown.technique), BREAKDOWN_COPY.time(report.breakdown.time),
-      BREAKDOWN_COPY.waste(report.breakdown.waste),
-    ].join('\n'), { fontSize: '12px', color: '#7a6a5c', align: 'center', lineSpacing: 4 }).setOrigin(0.5);
-    const next = this.makeButton(0, FEEDBACK.nextOffsetY, 220, BTN.h, () => MENU.next, () => this.dismissFeedbackCard(), COL.teal);
+    const summaryText = this.add
+      .text(0, 20, summarySentence(report.summary, drinkName), {
+        fontSize: '14px',
+        color: '#2d2016',
+        align: 'center',
+        wordWrap: { width: 330 },
+      })
+      .setOrigin(0.5);
+    const bd = this.add
+      .text(
+        0,
+        110,
+        [
+          BREAKDOWN_COPY.orderMatch(report.breakdown.orderMatch),
+          BREAKDOWN_COPY.recipe(report.breakdown.recipe),
+          BREAKDOWN_COPY.technique(report.breakdown.technique),
+          BREAKDOWN_COPY.time(report.breakdown.time),
+          BREAKDOWN_COPY.waste(report.breakdown.waste),
+        ].join('\n'),
+        { fontSize: '12px', color: '#7a6a5c', align: 'center', lineSpacing: 4 },
+      )
+      .setOrigin(0.5);
+    const next = this.makeButton(
+      0,
+      FEEDBACK.nextOffsetY,
+      220,
+      BTN.h,
+      () => MENU.next,
+      () => this.dismissFeedbackCard(),
+      COL.teal,
+    );
     card.add([scrim, bg, title, ...chipTexts, summaryText, bd, next]);
     this.feedbackCard = card;
   }
@@ -468,7 +687,11 @@ export class GameScene extends Phaser.Scene {
     const levelId = this.level?.id ?? '';
     const reports = this.reports;
     this.level = null;
-    this.game.events.emit('level-complete', { levelId, reports, masteryBefore: this.masteryBefore } satisfies LevelCompletePayload);
+    this.game.events.emit('level-complete', {
+      levelId,
+      reports,
+      masteryBefore: this.masteryBefore,
+    } satisfies LevelCompletePayload);
     this.scene.stop();
   }
 
@@ -502,7 +725,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private statusLine(name: string): void {
-    const text = this.add.text(20, STATION_STATUS_Y, '', { fontSize: '12px', color: '#2d2016', wordWrap: { width: 350 }, lineSpacing: 3 }).setName(name);
+    const text = this.add
+      .text(20, STATION_STATUS_Y, '', { fontSize: '12px', color: '#2d2016', wordWrap: { width: 350 }, lineSpacing: 3 })
+      .setName(name);
     this.stationView?.add(text);
   }
 
@@ -518,37 +743,99 @@ export class GameScene extends Phaser.Scene {
     this.statusLine('ext-status');
 
     const grinds: ('fine' | 'medium' | 'coarse')[] = ['fine', 'medium', 'coarse'];
-    const labels: Record<'fine' | 'medium' | 'coarse', string> = { fine: GAME_COPY.grindFine, medium: GAME_COPY.grindMedium, coarse: GAME_COPY.grindCoarse };
+    const labels: Record<'fine' | 'medium' | 'coarse', string> = {
+      fine: GAME_COPY.grindFine,
+      medium: GAME_COPY.grindMedium,
+      coarse: GAME_COPY.grindCoarse,
+    };
     grinds.forEach((g, i) => {
-      this.controlsView?.add(this.makeButton(COL_X[i] ?? 65, ROW_Y[0], BTN.w, BTN.h, () => labels[g], () => { this.ext.grind = g; }, this.ext.grind === g ? COL.teal : COL.coffee));
+      this.controlsView?.add(
+        this.makeButton(
+          COL_X[i] ?? 65,
+          ROW_Y[0],
+          BTN.w,
+          BTN.h,
+          () => labels[g],
+          () => {
+            this.ext.grind = g;
+          },
+          this.ext.grind === g ? COL.teal : COL.coffee,
+        ),
+      );
     });
-    this.controlsView?.add(this.makeButton(65, ROW_Y[1], BTN.w, BTN.h, () => STATION_COPY.dose(this.ext.doseGrams), () => {
-      if (this.ext.doseGrams < 22) this.ext.doseGrams += 1;
-    }));
-    this.controlsView?.add(this.makeHoldButton(195, ROW_Y[1], BTN.w, BTN.h, () => STATION_COPY.tamp(Math.round(this.ext.tampKg)), () => { this.ext.tampHeld = true; }, () => {
-      if (!this.ext.tampHeld) return;
-      this.ext.tampHeld = false;
-      this.ext.tampGood = this.ext.tampPeakKg >= EXTRACTION.tampBandKg[0] && this.ext.tampPeakKg <= EXTRACTION.tampBandKg[1];
-      this.buzz(this.ext.tampGood ? 25 : 0);
-      this.ext.tampKg = 0;
-      this.ext.tampPeakKg = 0;
-    }));
-    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.ext.brewing ? STATION_COPY.stop : STATION_COPY.brew), () => {
-      if (this.ext.brewing) this.stopPull();
-      else if (this.ext.pulls.length < 3) { this.ext.brewing = true; sfx.startExtraction(); }
-      else this.toast(TOAST_COPY.maxShots);
-    }, this.ext.brewing ? COL.red : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => STATION_COPY.emptyGrinder, () => {
-      this.ext = freshExtraction();
-    }));
+    this.controlsView?.add(
+      this.makeButton(
+        65,
+        ROW_Y[1],
+        BTN.w,
+        BTN.h,
+        () => STATION_COPY.dose(this.ext.doseGrams),
+        () => {
+          if (this.ext.doseGrams < 22) this.ext.doseGrams += 1;
+        },
+      ),
+    );
+    this.controlsView?.add(
+      this.makeHoldButton(
+        195,
+        ROW_Y[1],
+        BTN.w,
+        BTN.h,
+        () => STATION_COPY.tamp(Math.round(this.ext.tampKg)),
+        () => {
+          this.ext.tampHeld = true;
+        },
+        () => {
+          if (!this.ext.tampHeld) return;
+          this.ext.tampHeld = false;
+          this.ext.tampGood =
+            this.ext.tampPeakKg >= EXTRACTION.tampBandKg[0] && this.ext.tampPeakKg <= EXTRACTION.tampBandKg[1];
+          this.buzz(this.ext.tampGood ? 25 : 0);
+          this.ext.tampKg = 0;
+          this.ext.tampPeakKg = 0;
+        },
+      ),
+    );
+    this.controlsView?.add(
+      this.makeButton(
+        325,
+        ROW_Y[1],
+        BTN.w,
+        BTN.h,
+        () => (this.ext.brewing ? STATION_COPY.stop : STATION_COPY.brew),
+        () => {
+          if (this.ext.brewing) this.stopPull();
+          else if (this.ext.pulls.length < 3) {
+            this.ext.brewing = true;
+            sfx.startExtraction();
+          } else this.toast(TOAST_COPY.maxShots);
+        },
+        this.ext.brewing ? COL.red : COL.coffee,
+      ),
+    );
+    this.controlsView?.add(
+      this.makeButton(
+        195,
+        ROW_Y[2],
+        BTN.wideW,
+        BTN.h,
+        () => STATION_COPY.emptyGrinder,
+        () => {
+          this.ext = freshExtraction();
+        },
+      ),
+    );
   }
 
   private stopPull(): void {
     this.ext.pulls.push({
-      grind: this.ext.grind, doseGrams: this.ext.doseGrams, tampOk: this.ext.tampGood,
+      grind: this.ext.grind,
+      doseGrams: this.ext.doseGrams,
+      tampOk: this.ext.tampGood,
       seconds: Math.round(this.ext.brewSeconds * 10) / 10,
     });
-    const inBand = this.ext.brewSeconds >= EXTRACTION.timeBandSeconds[0] && this.ext.brewSeconds <= EXTRACTION.timeBandSeconds[1];
+    const inBand =
+      this.ext.brewSeconds >= EXTRACTION.timeBandSeconds[0] && this.ext.brewSeconds <= EXTRACTION.timeBandSeconds[1];
     sfx.stopExtraction();
     this.buzz(inBand ? 30 : 0);
     this.toast(`Shot pulled: ${Math.round(this.ext.brewSeconds * 10) / 10}s${inBand ? ' \u2713' : ''}`);
@@ -565,53 +852,133 @@ export class GameScene extends Phaser.Scene {
     this.stationView?.add(this.add.image(290, 445, 'wand').setScale(3));
     this.statusLine('milk-status');
 
-    this.controlsView?.add(this.makeButton(65, ROW_Y[0], BTN.w, BTN.h, () => STATION_COPY.smallJug, () => {
-      this.milk.jug = 'small-jug';
-      this.milk.used = true;
-      jugSprite.setTexture('jug-small');
-    }, this.milk.jug === 'small-jug' ? COL.teal : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[0], BTN.w, BTN.h, () => STATION_COPY.largeJug, () => {
-      this.milk.jug = 'large-jug';
-      this.milk.used = true;
-      jugSprite.setTexture('jug-large');
-    }, this.milk.jug === 'large-jug' ? COL.teal : COL.coffee));
+    this.controlsView?.add(
+      this.makeButton(
+        65,
+        ROW_Y[0],
+        BTN.w,
+        BTN.h,
+        () => STATION_COPY.smallJug,
+        () => {
+          this.milk.jug = 'small-jug';
+          this.milk.used = true;
+          jugSprite.setTexture('jug-small');
+        },
+        this.milk.jug === 'small-jug' ? COL.teal : COL.coffee,
+      ),
+    );
+    this.controlsView?.add(
+      this.makeButton(
+        195,
+        ROW_Y[0],
+        BTN.w,
+        BTN.h,
+        () => STATION_COPY.largeJug,
+        () => {
+          this.milk.jug = 'large-jug';
+          this.milk.used = true;
+          jugSprite.setTexture('jug-large');
+        },
+        this.milk.jug === 'large-jug' ? COL.teal : COL.coffee,
+      ),
+    );
     const milks = this.level?.milks ?? ['whole'];
-    this.controlsView?.add(this.makeButton(325, ROW_Y[0], BTN.w, BTN.h, () => GAME_COPY[this.milk.type], () => {
-      const next = milks[(milks.indexOf(this.milk.type) + 1) % milks.length] ?? 'whole';
-      this.milk.type = next;
-    }));
-    this.controlsView?.add(this.makeHoldButton(65, ROW_Y[1], BTN.w, BTN.h, () => STATION_COPY.fill(Math.round(this.milk.fillMl)), () => { this.milk.filling = true; this.milk.used = true; }, () => { this.milk.filling = false; }));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.purged ? STATION_COPY.purged : STATION_COPY.purgeWand), () => { this.milk.purged = true; }, this.milk.purged ? COL.green : COL.coffee));
-    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.ruined ? STATION_COPY.emptyJug : this.milk.steaming ? STATION_COPY.removeJug : STATION_COPY.steam), () => {
-      if (this.milk.ruined) {
-        this.wasteEvents.push('emptied-jug');
-        this.milk = freshMilk(this.level ?? ({ milks: ['whole'] } as LevelDef));
-        this.toast(TOAST_COPY.jugEmptied);
-        return;
-      }
-      if (this.milk.steaming) {
-        this.milk.steaming = false;
-        sfx.stopSteam();
-        const order = this.currentDrink();
-        if (order != null) {
-          const target = order.extraHot ? MILK_TEMP.extraHot.target : this.milk.type === 'oat' ? MILK_TEMP.oat.target : MILK_TEMP.dairy.target;
-          const inBand = this.milk.tempC >= target[0] && this.milk.tempC <= target[1];
-          this.buzz(inBand ? [20, 40, 20] : 0);
-        }
-        this.checkJugOverflow();
-      } else if (this.milk.jug != null && this.milk.fillMl > 0) {
-        this.milk.used = true;
-        this.milk.steaming = true;
-        sfx.startSteam();
-        sfx.setSteamDepth(this.milk.wandDepth === 'deep');
-      } else {
-        this.toast(TOAST_COPY.needJug);
-      }
-    }, this.milk.steaming ? COL.red : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => STATION_COPY.wandDepth(this.milk.wandDepth), () => {
-      this.milk.wandDepth = this.milk.wandDepth === 'shallow' ? 'deep' : 'shallow';
-      sfx.setSteamDepth(this.milk.wandDepth === 'deep');
-    }));
+    this.controlsView?.add(
+      this.makeButton(
+        325,
+        ROW_Y[0],
+        BTN.w,
+        BTN.h,
+        () => GAME_COPY[this.milk.type],
+        () => {
+          const next = milks[(milks.indexOf(this.milk.type) + 1) % milks.length] ?? 'whole';
+          this.milk.type = next;
+        },
+      ),
+    );
+    this.controlsView?.add(
+      this.makeHoldButton(
+        65,
+        ROW_Y[1],
+        BTN.w,
+        BTN.h,
+        () => STATION_COPY.fill(Math.round(this.milk.fillMl)),
+        () => {
+          this.milk.filling = true;
+          this.milk.used = true;
+        },
+        () => {
+          this.milk.filling = false;
+        },
+      ),
+    );
+    this.controlsView?.add(
+      this.makeButton(
+        195,
+        ROW_Y[1],
+        BTN.w,
+        BTN.h,
+        () => (this.milk.purged ? STATION_COPY.purged : STATION_COPY.purgeWand),
+        () => {
+          this.milk.purged = true;
+        },
+        this.milk.purged ? COL.green : COL.coffee,
+      ),
+    );
+    this.controlsView?.add(
+      this.makeButton(
+        325,
+        ROW_Y[1],
+        BTN.w,
+        BTN.h,
+        () =>
+          this.milk.ruined ? STATION_COPY.emptyJug : this.milk.steaming ? STATION_COPY.removeJug : STATION_COPY.steam,
+        () => {
+          if (this.milk.ruined) {
+            this.wasteEvents.push('emptied-jug');
+            this.milk = freshMilk(this.level ?? ({ milks: ['whole'] } as LevelDef));
+            this.toast(TOAST_COPY.jugEmptied);
+            return;
+          }
+          if (this.milk.steaming) {
+            this.milk.steaming = false;
+            sfx.stopSteam();
+            const order = this.currentDrink();
+            if (order != null) {
+              const target = order.extraHot
+                ? MILK_TEMP.extraHot.target
+                : this.milk.type === 'oat'
+                  ? MILK_TEMP.oat.target
+                  : MILK_TEMP.dairy.target;
+              const inBand = this.milk.tempC >= target[0] && this.milk.tempC <= target[1];
+              this.buzz(inBand ? [20, 40, 20] : 0);
+            }
+            this.checkJugOverflow();
+          } else if (this.milk.jug != null && this.milk.fillMl > 0) {
+            this.milk.used = true;
+            this.milk.steaming = true;
+            sfx.startSteam();
+            sfx.setSteamDepth(this.milk.wandDepth === 'deep');
+          } else {
+            this.toast(TOAST_COPY.needJug);
+          }
+        },
+        this.milk.steaming ? COL.red : COL.coffee,
+      ),
+    );
+    this.controlsView?.add(
+      this.makeButton(
+        195,
+        ROW_Y[2],
+        BTN.wideW,
+        BTN.h,
+        () => STATION_COPY.wandDepth(this.milk.wandDepth),
+        () => {
+          this.milk.wandDepth = this.milk.wandDepth === 'shallow' ? 'deep' : 'shallow';
+          sfx.setSteamDepth(this.milk.wandDepth === 'deep');
+        },
+      ),
+    );
   }
 
   private checkJugOverflow(): void {
@@ -632,33 +999,81 @@ export class GameScene extends Phaser.Scene {
     this.stationView?.add(vesselSprite);
     this.statusLine('asm-status');
 
-    const vessels: VesselId[] = ['demitasse', 'americano-mug', 'cappuccino-cup', 'latte-glass', 'flat-white-cup', 'takeaway-cup'];
+    const vessels: VesselId[] = [
+      'demitasse',
+      'americano-mug',
+      'cappuccino-cup',
+      'latte-glass',
+      'flat-white-cup',
+      'takeaway-cup',
+    ];
     vessels.forEach((v, i) => {
       const x = COL_X[i % 3] ?? 65;
       const y = ROW_Y[Math.floor(i / 3)] ?? ROW_Y[0];
-      this.controlsView?.add(this.makeButton(x, y, BTN.w, BTN.h, () => v.replaceAll('-', ' '), () => {
-        this.pushUndo();
-        this.asm.vessel = v;
-        this.asm.actions = ['vessel'];
-        vesselSprite.setTexture(`vessel-${v}`);
-      }, this.asm.vessel === v ? COL.teal : COL.coffee));
+      this.controlsView?.add(
+        this.makeButton(
+          x,
+          y,
+          BTN.w,
+          BTN.h,
+          () => v.replaceAll('-', ' '),
+          () => {
+            this.pushUndo();
+            this.asm.vessel = v;
+            this.asm.actions = ['vessel'];
+            vesselSprite.setTexture(`vessel-${v}`);
+          },
+          this.asm.vessel === v ? COL.teal : COL.coffee,
+        ),
+      );
     });
-    this.controlsView?.add(this.makeButton(65, ROW_Y[2], BTN.w, BTN.h, () => GAME_COPY.addEspresso, () => this.addShot()));
-    this.controlsView?.add(this.makeHoldButton(195, ROW_Y[2], BTN.w, BTN.h, () => `${GAME_COPY.addWater}${this.asm.waterMl != null ? ` ${Math.round(this.asm.waterMl)}ml` : ''}`, () => { this.asm.pouringWater = true; }, () => {
-      this.asm.pouringWater = false;
-      if (this.asm.waterMl != null && this.asm.waterMl > 0 && !this.asm.actions.includes('water')) {
-        this.asm.actions.push('water');
-      }
-    }));
-    this.controlsView?.add(this.makeHoldButton(325, ROW_Y[2], BTN.w, BTN.h, () => GAME_COPY.pourMilk, () => {
-      if (!this.milk.used || this.milk.ruined) {
-        this.toast(TOAST_COPY.needMilk);
-        return;
-      }
-      this.pushUndo();
-      this.asm.milkPoured = true;
-      if (!this.asm.actions.includes('milk')) this.asm.actions.push('milk');
-    }, () => undefined));
+    this.controlsView?.add(
+      this.makeButton(
+        65,
+        ROW_Y[2],
+        BTN.w,
+        BTN.h,
+        () => GAME_COPY.addEspresso,
+        () => this.addShot(),
+      ),
+    );
+    this.controlsView?.add(
+      this.makeHoldButton(
+        195,
+        ROW_Y[2],
+        BTN.w,
+        BTN.h,
+        () => `${GAME_COPY.addWater}${this.asm.waterMl != null ? ` ${Math.round(this.asm.waterMl)}ml` : ''}`,
+        () => {
+          this.asm.pouringWater = true;
+        },
+        () => {
+          this.asm.pouringWater = false;
+          if (this.asm.waterMl != null && this.asm.waterMl > 0 && !this.asm.actions.includes('water')) {
+            this.asm.actions.push('water');
+          }
+        },
+      ),
+    );
+    this.controlsView?.add(
+      this.makeHoldButton(
+        325,
+        ROW_Y[2],
+        BTN.w,
+        BTN.h,
+        () => GAME_COPY.pourMilk,
+        () => {
+          if (!this.milk.used || this.milk.ruined) {
+            this.toast(TOAST_COPY.needMilk);
+            return;
+          }
+          this.pushUndo();
+          this.asm.milkPoured = true;
+          if (!this.asm.actions.includes('milk')) this.asm.actions.push('milk');
+        },
+        () => undefined,
+      ),
+    );
   }
 
   private addShot(): void {
@@ -674,8 +1089,11 @@ export class GameScene extends Phaser.Scene {
 
   private pushUndo(): void {
     this.asm.undoStack.push({
-      vessel: this.asm.vessel, shotsUsed: this.asm.shotsUsed, waterMl: this.asm.waterMl,
-      milkPoured: this.asm.milkPoured, actions: [...this.asm.actions],
+      vessel: this.asm.vessel,
+      shotsUsed: this.asm.shotsUsed,
+      waterMl: this.asm.waterMl,
+      milkPoured: this.asm.milkPoured,
+      actions: [...this.asm.actions],
     });
     if (this.asm.undoStack.length > 5) this.asm.undoStack.shift();
   }
@@ -687,7 +1105,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const { pouringWater: _pw, undoStack: _us, ...snapshot } = this.asm;
-    void _pw; void _us;
+    void _pw;
+    void _us;
     this.asm = { ...snapshot, ...prev, pouringWater: false, undoStack: this.asm.undoStack };
     const sprite = this.stationView?.getByName('vessel-sprite') as Phaser.GameObjects.Image | null;
     if (sprite != null && this.asm.vessel != null) sprite.setTexture(`vessel-${this.asm.vessel}`);
@@ -724,35 +1143,57 @@ export class GameScene extends Phaser.Scene {
     const recipe = order != null ? recipeFor(order.drink) : null;
     const extStatus = this.stationView?.getByName('ext-status') as Phaser.GameObjects.Text | null;
     if (extStatus != null) {
-      extStatus.setText([
-        STATUS_COPY.extraction(this.ext.grind, this.ext.doseGrams, Math.round(this.ext.tampKg)),
-        this.ext.brewing
-          ? STATUS_COPY.brewing(Math.round(this.ext.brewSeconds * 10) / 10, Math.round(this.ext.yieldGrams))
-          : STATUS_COPY.shotsPulled(this.ext.pulls.length),
-      ].join('\n'));
+      extStatus.setText(
+        [
+          STATUS_COPY.extraction(this.ext.grind, this.ext.doseGrams, Math.round(this.ext.tampKg)),
+          this.ext.brewing
+            ? STATUS_COPY.brewing(Math.round(this.ext.brewSeconds * 10) / 10, Math.round(this.ext.yieldGrams))
+            : STATUS_COPY.shotsPulled(this.ext.pulls.length),
+        ].join('\n'),
+      );
     }
     const milkStatus = this.stationView?.getByName('milk-status') as Phaser.GameObjects.Text | null;
     if (milkStatus != null && recipe != null && order != null) {
       const spec = recipe.milkVolumeMl[order.size] ?? null;
-      const tempTarget = order.extraHot ? MILK_TEMP.extraHot.target : this.milk.type === 'oat' ? MILK_TEMP.oat.target : MILK_TEMP.dairy.target;
-      milkStatus.setText([
-        STATUS_COPY.jug(this.milk.jug ?? 'none', this.milk.type, this.milk.wandDepth, this.milk.purged, this.milk.ruined),
-        STATUS_COPY.milkFill(
-          Math.round(this.milk.fillMl), spec, Math.round(this.milk.tempC), this.milk.foamCm.toFixed(1), tempTarget,
-        ),
-      ].join('\n'));
+      const tempTarget = order.extraHot
+        ? MILK_TEMP.extraHot.target
+        : this.milk.type === 'oat'
+          ? MILK_TEMP.oat.target
+          : MILK_TEMP.dairy.target;
+      milkStatus.setText(
+        [
+          STATUS_COPY.jug(
+            this.milk.jug ?? 'none',
+            this.milk.type,
+            this.milk.wandDepth,
+            this.milk.purged,
+            this.milk.ruined,
+          ),
+          STATUS_COPY.milkFill(
+            Math.round(this.milk.fillMl),
+            spec,
+            Math.round(this.milk.tempC),
+            this.milk.foamCm.toFixed(1),
+            tempTarget,
+          ),
+        ].join('\n'),
+      );
     }
     const asmStatus = this.stationView?.getByName('asm-status') as Phaser.GameObjects.Text | null;
     if (asmStatus != null) {
       const shotsAvailable = this.ext.pulls.length - this.asm.shotsUsed;
-      asmStatus.setText([
-        STATUS_COPY.vessel(this.asm.vessel ?? 'none', this.asm.shotsUsed, shotsAvailable),
-        STATUS_COPY.water(
-          this.asm.waterMl != null ? `${Math.round(this.asm.waterMl)} ml` : '\u2014',
-          this.asm.milkPoured ? `${Math.round(this.milk.fillMl)} ml / ${this.milk.foamCm.toFixed(1)} cm foam` : '\u2014',
-        ),
-        STATUS_COPY.steps(this.asm.actions.length > 0 ? this.asm.actions.join(' \u2192 ') : STATUS_COPY.noSteps),
-      ].join('\n'));
+      asmStatus.setText(
+        [
+          STATUS_COPY.vessel(this.asm.vessel ?? 'none', this.asm.shotsUsed, shotsAvailable),
+          STATUS_COPY.water(
+            this.asm.waterMl != null ? `${Math.round(this.asm.waterMl)} ml` : '\u2014',
+            this.asm.milkPoured
+              ? `${Math.round(this.milk.fillMl)} ml / ${this.milk.foamCm.toFixed(1)} cm foam`
+              : '\u2014',
+          ),
+          STATUS_COPY.steps(this.asm.actions.length > 0 ? this.asm.actions.join(' \u2192 ') : STATUS_COPY.noSteps),
+        ].join('\n'),
+      );
     }
     this.guidedText?.setText(this.level?.guided === true ? this.guidedHint() : '');
   }
@@ -827,7 +1268,11 @@ export class GameScene extends Phaser.Scene {
       const rate = this.milk.type === 'oat' ? 3.5 : 3;
       this.milk.tempC += rate * dt;
       this.milk.foamCm += (this.milk.wandDepth === 'shallow' ? 0.14 : 0.02) * dt;
-      const failAt = order.extraHot ? MILK_TEMP.extraHot.failAt : this.milk.type === 'oat' ? MILK_TEMP.oat.failAt : MILK_TEMP.dairy.failAt;
+      const failAt = order.extraHot
+        ? MILK_TEMP.extraHot.failAt
+        : this.milk.type === 'oat'
+          ? MILK_TEMP.oat.failAt
+          : MILK_TEMP.dairy.failAt;
       if (!this.milk.hotWarned && this.milk.tempC >= failAt) {
         this.milk.hotWarned = true;
         this.toast(TOAST_COPY.milkTooHot);
@@ -847,7 +1292,7 @@ export class GameScene extends Phaser.Scene {
       if (before < capacity && this.asm.waterMl >= capacity) this.toast(TOAST_COPY.vesselFull);
     }
 
-    if ((this.ext.tampHeld || this.ext.brewing || this.milk.filling || this.milk.steaming || this.asm.pouringWater)) {
+    if (this.ext.tampHeld || this.ext.brewing || this.milk.filling || this.milk.steaming || this.asm.pouringWater) {
       this.refreshStationText();
       this.refreshControls();
     }
@@ -866,13 +1311,22 @@ export class GameScene extends Phaser.Scene {
       this.patienceBar.fillColor = remaining < 0.3 ? COL.red : COL.teal;
     }
 
-
     // Order changes fire at most once, on ~half of eligible orders, between 8-15 s
     // (firing at a fixed 5 s on every order forced a full redo of every drink).
-    if (this.level.orderChanges && !this.orderChanged && this.orderChangeAt == null && this.clockGame - this.orderStartClock > 1) {
+    if (
+      this.level.orderChanges &&
+      !this.orderChanged &&
+      this.orderChangeAt == null &&
+      this.clockGame - this.orderStartClock > 1
+    ) {
       this.orderChangeAt = 8 + Math.random() * 7;
     }
-    if (this.level.orderChanges && !this.orderChanged && this.orderChangeAt != null && this.clockGame - this.orderStartClock > this.orderChangeAt) {
+    if (
+      this.level.orderChanges &&
+      !this.orderChanged &&
+      this.orderChangeAt != null &&
+      this.clockGame - this.orderStartClock > this.orderChangeAt
+    ) {
       this.changeOrder();
     }
   }
@@ -888,7 +1342,6 @@ export class GameScene extends Phaser.Scene {
       // vibration unsupported — ignore
     }
   }
-
 
   private changeOrder(): void {
     if (Math.random() >= 0.5) {
@@ -907,7 +1360,13 @@ export class GameScene extends Phaser.Scene {
       this.toast(TOAST_COPY.ticketChanged);
       this.renderTicket();
       if (this.ticketPanel != null && !this.save.settings.reduceAnimations) {
-        this.tweens.add({ targets: this.ticketPanel, alpha: { from: 1, to: 0.4 }, duration: 250, yoyo: true, repeat: 3 });
+        this.tweens.add({
+          targets: this.ticketPanel,
+          alpha: { from: 1, to: 0.4 },
+          duration: 250,
+          yoyo: true,
+          repeat: 3,
+        });
       }
     }
   }

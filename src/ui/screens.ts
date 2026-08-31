@@ -1,4 +1,13 @@
-import { APP_NAME, FEEDBACK_LABELS, GAME_COPY, MENU, MODE_COPY, RECIPE_BOOK_COPY, SETTINGS_COPY, VESSEL_LABELS } from './copy';
+import {
+  APP_NAME,
+  FEEDBACK_LABELS,
+  GAME_COPY,
+  MENU,
+  MODE_COPY,
+  RECIPE_BOOK_COPY,
+  SETTINGS_COPY,
+  VESSEL_LABELS,
+} from './copy';
 import { renderFooter } from './footer';
 import type { SaveData } from '../domain/save';
 import { defaultSave, loadSave, savePersistence, writeSave } from '../domain/save';
@@ -6,7 +15,12 @@ import { DRINK_IDS, EXTRACTION, MILK_TEMP, RECIPES, parFor } from '../domain/rec
 import type { DrinkId } from '../domain/types';
 import { LEVELS, levelById, levelsForMode } from '../domain/levels';
 import {
-  LEARN_PASS, isLearnUnlocked, isPracticeUnlocked, isShiftUnlocked, rankFor, starsFor,
+  LEARN_PASS,
+  isLearnUnlocked,
+  isPracticeUnlocked,
+  isShiftUnlocked,
+  rankFor,
+  starsFor,
 } from '../domain/progression';
 
 export type ScreenId = 'menu' | 'mode' | 'levels' | 'settings' | 'recipe-book' | 'summary' | 'game';
@@ -28,7 +42,8 @@ type Mode = 'learn' | 'practice' | 'shift';
  */
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (ch) =>
-    ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '"' ? '&quot;' : '&#39;');
+    ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '"' ? '&quot;' : '&#39;',
+  );
 }
 
 let save: SaveData = loadSave();
@@ -43,8 +58,6 @@ let exitGameHandler: (() => void) | null = null;
 export function setExitGameHandler(handler: () => void): void {
   exitGameHandler = handler;
 }
-
-
 
 export function setStartLevelHandler(handler: (levelId: string) => void): void {
   startLevelHandler = handler;
@@ -102,20 +115,29 @@ function shell(title: string, body: string, subtitle = ''): string {
 
 function renderScreen(id: ScreenId): string {
   switch (id) {
-    case 'menu': return renderMenu();
-    case 'mode': return renderMode();
-    case 'levels': return renderLevels();
-    case 'settings': return renderSettings();
-    case 'recipe-book': return renderRecipeBook();
-    case 'summary': return renderSummary();
-    default: return shell(APP_NAME, '');
+    case 'menu':
+      return renderMenu();
+    case 'mode':
+      return renderMode();
+    case 'levels':
+      return renderLevels();
+    case 'settings':
+      return renderSettings();
+    case 'recipe-book':
+      return renderRecipeBook();
+    case 'summary':
+      return renderSummary();
+    default:
+      return shell(APP_NAME, '');
   }
 }
 
 // ---- Main menu ----
 
 function renderMenu(): string {
-  return shell(APP_NAME, `
+  return shell(
+    APP_NAME,
+    `
     <div class="stack" style="margin-top:24px">
       <button class="btn btn--primary" data-action="mode">${MENU.play}</button>
       <button class="btn" data-action="recipe-book">${MENU.recipeBook}</button>
@@ -123,14 +145,18 @@ function renderMenu(): string {
     </div>
     <span class="version-chip">v${__APP_VERSION__}</span>
     <p class="screen__subtitle" style="margin-top:16px">${MODE_COPY.rank}: ${rankFor(save) === 'barista' ? 'Barista' : 'Trainee'}</p>
-  `, 'Learn caf\u00e9-quality coffee, one shift at a time.');
+  `,
+    'Learn caf\u00e9-quality coffee, one shift at a time.',
+  );
 }
 
 // ---- Mode select ----
 
 function renderMode(): string {
   const learnDone = levelsForMode('learn').filter((_, i) => (save.progress.learn[i] ?? 0) >= LEARN_PASS).length;
-  const practiceDone = levelsForMode('practice').filter((_, i) => (save.progress.practice[i] ?? 0) >= LEARN_PASS).length;
+  const practiceDone = levelsForMode('practice').filter(
+    (_, i) => (save.progress.practice[i] ?? 0) >= LEARN_PASS,
+  ).length;
   const shiftStars = save.progress.shift.reduce((s, e) => s + e.stars, 0);
   const shiftDone = save.progress.shift.filter((e) => e.stars >= 1).length;
 
@@ -144,14 +170,17 @@ function renderMode(): string {
       ${locked ? `<span class="lock">\u{1F512} ${MODE_COPY.locked}</span>` : '<span aria-hidden="true">\u25B8</span>'}
     </button>`;
 
-  return shell(MENU.play, `
+  return shell(
+    MENU.play,
+    `
     <div class="mode-grid">
       ${card('learn', learnDone, 5, '', false)}
       ${card('practice', practiceDone, 5, '', !isPracticeUnlocked(save, 0))}
       ${card('shift', shiftDone, 10, ` \u00b7 ${shiftStars} ${MODE_COPY.starsEarned}`, !isShiftUnlocked(save, 0))}
     </div>
     <div class="btn-row"><button class="btn btn--ghost" data-action="menu">${MENU.back}</button></div>
-  `);
+  `,
+  );
 }
 
 // ---- Level select ----
@@ -165,31 +194,39 @@ function starString(stars: number, locked: boolean): string {
 function renderLevels(): string {
   const levels = levelsForMode(selectedMode);
   const unlocked = (i: number): boolean =>
-    selectedMode === 'learn' ? isLearnUnlocked(save, i)
-      : selectedMode === 'practice' ? isPracticeUnlocked(save, i)
+    selectedMode === 'learn'
+      ? isLearnUnlocked(save, i)
+      : selectedMode === 'practice'
+        ? isPracticeUnlocked(save, i)
         : isShiftUnlocked(save, i);
   const bestAt = (i: number): number =>
-    selectedMode === 'learn' ? (save.progress.learn[i] ?? 0)
-      : selectedMode === 'practice' ? (save.progress.practice[i] ?? 0)
+    selectedMode === 'learn'
+      ? (save.progress.learn[i] ?? 0)
+      : selectedMode === 'practice'
+        ? (save.progress.practice[i] ?? 0)
         : (save.progress.shift[i]?.best ?? 0);
   const starsAt = (i: number): number =>
-    selectedMode === 'shift' ? (save.progress.shift[i]?.stars ?? 0)
-      : bestAt(i) >= LEARN_PASS ? starsFor(bestAt(i)) : 0;
+    selectedMode === 'shift' ? (save.progress.shift[i]?.stars ?? 0) : bestAt(i) >= LEARN_PASS ? starsFor(bestAt(i)) : 0;
 
-  const cards = levels.map((level, i) => {
-    const open = unlocked(i);
-    const goal = `<span class="mode-card__meta" style="display:block">${level.goal}</span>`;
-    return `
+  const cards = levels
+    .map((level, i) => {
+      const open = unlocked(i);
+      const goal = `<span class="mode-card__meta" style="display:block">${level.goal}</span>`;
+      return `
       <button class="level-card" data-level="${level.id}" ${open ? '' : 'disabled'}>
         <span><strong>${level.id}</strong> ${open ? starString(starsAt(i), false) : `<span class="lock">\u{1F512} ${MODE_COPY.locked}</span>`}${goal}</span>
         <span aria-hidden="true">\u25B8</span>
       </button>`;
-  }).join('');
+    })
+    .join('');
 
-  return shell(MODE_COPY[selectedMode].name, `
+  return shell(
+    MODE_COPY[selectedMode].name,
+    `
     <div class="level-grid">${cards}</div>
     <div class="btn-row"><button class="btn btn--ghost" data-action="mode">${MENU.back}</button></div>
-  `);
+  `,
+  );
 }
 
 // ---- Settings ----
@@ -198,7 +235,9 @@ function renderSettings(): string {
   const toggle = (id: string, label: string, checked: boolean): string => `
     <label class="setting-row"><span>${label}</span><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}></label>`;
 
-  return shell(SETTINGS_COPY.title, `
+  return shell(
+    SETTINGS_COPY.title,
+    `
     <div class="stack">
       ${toggle('set-sound', SETTINGS_COPY.sound, save.settings.sound)}
       ${toggle('set-vibration', SETTINGS_COPY.vibration, save.settings.vibration)}
@@ -210,7 +249,8 @@ function renderSettings(): string {
       </div>
       <div class="btn-row"><button class="btn btn--ghost" data-action="menu">${MENU.back}</button></div>
     </div>
-  `);
+  `,
+  );
 }
 
 function wireResetConfirm(row: HTMLElement): void {
@@ -234,7 +274,8 @@ function parRange(drink: DrinkId): string {
   const c = RECIPE_BOOK_COPY;
   const recipe = RECIPES[drink];
   const pars = recipe.allowedSizes.map((size) =>
-    parFor({ drink, shots: recipe.defaultShots[size] ?? 1, takeaway: false }));
+    parFor({ drink, shots: recipe.defaultShots[size] ?? 1, takeaway: false }),
+  );
   const min = Math.min(...pars);
   const max = Math.max(...pars);
   return min === max ? `${min}${c.seconds}` : `${min}\u2013${max}${c.seconds}`;
@@ -243,15 +284,18 @@ function parRange(drink: DrinkId): string {
 function recipeCard(drink: DrinkId): string {
   const r = RECIPES[drink];
   const c = RECIPE_BOOK_COPY;
-  const sizeList = r.allowedSizes
-    .map((s) => `${GAME_COPY[s]} (${r.defaultShots[s] ?? 1}\u00d7)` )
-    .join(' \u00b7 ');
+  const sizeList = r.allowedSizes.map((s) => `${GAME_COPY[s]} (${r.defaultShots[s] ?? 1}\u00d7)`).join(' \u00b7 ');
   const milkList = r.milkDrink
-    ? Object.entries(r.milkVolumeMl).map(([size, ml]) => `${GAME_COPY[size as keyof typeof GAME_COPY] ?? size} ${ml}${c.ml}`).join(' \u00b7 ')
+    ? Object.entries(r.milkVolumeMl)
+        .map(([size, ml]) => `${GAME_COPY[size as keyof typeof GAME_COPY] ?? size} ${ml}${c.ml}`)
+        .join(' \u00b7 ')
     : '\u2014';
-  const waterList = drink === 'americano'
-    ? Object.entries(r.waterVolumeMl).map(([size, ml]) => `${GAME_COPY[size as keyof typeof GAME_COPY] ?? size} ${ml}${c.ml}`).join(' \u00b7 ')
-    : '\u2014';
+  const waterList =
+    drink === 'americano'
+      ? Object.entries(r.waterVolumeMl)
+          .map(([size, ml]) => `${GAME_COPY[size as keyof typeof GAME_COPY] ?? size} ${ml}${c.ml}`)
+          .join(' \u00b7 ')
+      : '\u2014';
   const foam = r.foamBandCm != null ? `${r.foamBandCm[0]}\u2013${r.foamBandCm[1]}${c.cm}` : '\u2014';
 
   return `
@@ -270,13 +314,16 @@ function recipeCard(drink: DrinkId): string {
 
 function renderRecipeBook(): string {
   const c = RECIPE_BOOK_COPY;
-  return shell(c.title, `
+  return shell(
+    c.title,
+    `
     <p class="disclaimer"><strong>${c.houseStandardTitle}.</strong> ${c.houseStandard}</p>
     <div class="stack">${DRINK_IDS.map(recipeCard).join('')}</div>
     <p class="disclaimer">${c.longBlackNote}</p>
     <p class="disclaimer">Dose ${EXTRACTION.doseTargetGrams}\u00a0g \u00b1\u00a02 \u00b7 extraction ${EXTRACTION.timeBandSeconds[0]}\u2013${EXTRACTION.timeBandSeconds[1]}\u00a0s \u00b7 milk ${MILK_TEMP.dairy.target[0]}\u2013${MILK_TEMP.dairy.target[1]}\u00a0\u00b0C (oat ${MILK_TEMP.oat.target[0]}\u2013${MILK_TEMP.oat.target[1]}\u00a0\u00b0C).</p>
     <div class="btn-row"><button class="btn btn--ghost" data-action="menu">${MENU.back}</button></div>
-  `);
+  `,
+  );
 }
 
 // ---- Level summary ----
@@ -294,25 +341,31 @@ function nextLevelId(levelId: string): string | null {
   const next = LEVELS[index + 1]!;
   if (next.mode !== current.mode) return null;
   const nextIndexInMode = LEVELS.filter((l) => l.mode === next.mode).findIndex((l) => l.id === next.id);
-  const unlocked = next.mode === 'learn' ? isLearnUnlocked(save, nextIndexInMode)
-    : next.mode === 'practice' ? isPracticeUnlocked(save, nextIndexInMode)
-      : isShiftUnlocked(save, nextIndexInMode);
+  const unlocked =
+    next.mode === 'learn'
+      ? isLearnUnlocked(save, nextIndexInMode)
+      : next.mode === 'practice'
+        ? isPracticeUnlocked(save, nextIndexInMode)
+        : isShiftUnlocked(save, nextIndexInMode);
   return unlocked ? next.id : null;
 }
 
 function renderSummary(): string {
   const s = summaryData;
-  if (s == null) return shell(APP_NAME, `<div class="btn-row"><button class="btn" data-action="menu">${MENU.back}</button></div>`);
+  if (s == null)
+    return shell(APP_NAME, `<div class="btn-row"><button class="btn" data-action="menu">${MENU.back}</button></div>`);
   const level = levelById(s.levelId);
   const title = level?.mode === 'learn' ? GAME_COPY.learnComplete : GAME_COPY.levelComplete;
   const starGlyphs = '\u2605\u2605\u2605'.slice(0, s.stars) + '\u2606\u2606\u2606'.slice(0, 3 - s.stars);
-  const chips = s.reports.map((r, i) => {
-    const labels = r.feedback
-      .filter((f) => f !== 'PERFECT_ORDER' && f !== 'CORRECT_DRINK')
-      .map((f) => escapeHtml(FEEDBACK_LABELS[f as keyof typeof FEEDBACK_LABELS] ?? f));
-    const good = labels.length === 0;
-    return `<span class="chip ${good ? 'chip--good' : 'chip--bad'}">#${i + 1} ${r.total}%${labels.length > 0 ? ` \u00b7 ${labels.slice(0, 2).join(', ')}` : ' \u00b7 Perfect'}</span>`;
-  }).join('');
+  const chips = s.reports
+    .map((r, i) => {
+      const labels = r.feedback
+        .filter((f) => f !== 'PERFECT_ORDER' && f !== 'CORRECT_DRINK')
+        .map((f) => escapeHtml(FEEDBACK_LABELS[f as keyof typeof FEEDBACK_LABELS] ?? f));
+      const good = labels.length === 0;
+      return `<span class="chip ${good ? 'chip--good' : 'chip--bad'}">#${i + 1} ${r.total}%${labels.length > 0 ? ` \u00b7 ${labels.slice(0, 2).join(', ')}` : ' \u00b7 Perfect'}</span>`;
+    })
+    .join('');
   const masteryLines = Object.entries(s.masteryAfter)
     .filter(([key]) => key.startsWith('drink:'))
     .map(([key, value]) => {
@@ -320,7 +373,9 @@ function renderSummary(): string {
       return `${escapeHtml(drinkName)} mastery: ${Math.round(value)}%`;
     });
   const nextId = nextLevelId(s.levelId);
-  return shell(title, `
+  return shell(
+    title,
+    `
     <p class="screen__subtitle" style="font-size:2rem;color:${s.avg >= 70 ? '#3a7d44' : '#c0392b'}">${s.avg}%</p>
     <p class="stars" aria-label="${s.stars} of 3 stars" style="text-align:center;font-size:1.6rem">${starGlyphs}</p>
     <div class="summary-chips">${chips}</div>
@@ -331,7 +386,9 @@ function renderSummary(): string {
       ${nextId != null ? `<button class="btn btn--primary" data-action="next-level" data-next-id="${nextId}">${MENU.next}</button>` : ''}
       <button class="btn btn--ghost" data-action="menu">${MENU.back}</button>
     </div>
-  `, level?.goal ?? '');
+  `,
+    level?.goal ?? '',
+  );
 }
 
 // ---- wiring ----
@@ -344,12 +401,12 @@ function wireScreen(id: ScreenId, screen: HTMLElement): void {
       else if (action === 'mode') show('mode');
       else if (action === 'recipe-book') show('recipe-book');
       else if (action === 'settings') show('settings');
-      else if (action === 'retry') { if (summaryData != null) startLevelHandler?.(summaryData.levelId); }
-      else if (action === 'next-level') {
+      else if (action === 'retry') {
+        if (summaryData != null) startLevelHandler?.(summaryData.levelId);
+      } else if (action === 'next-level') {
         const nextId = (el as HTMLElement).dataset.nextId;
         if (nextId != null) startLevelHandler?.(nextId);
-      }
-      else if (action === 'reset-ask') wireResetConfirm(document.getElementById('reset-row') ?? screen);
+      } else if (action === 'reset-ask') wireResetConfirm(document.getElementById('reset-row') ?? screen);
     });
   });
 

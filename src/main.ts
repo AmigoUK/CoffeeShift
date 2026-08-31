@@ -43,7 +43,11 @@ function wireGame(instance: Phaser.Game): void {
       levelId: payload.levelId,
       avg,
       stars,
-      reports: payload.reports.map((r) => ({ order: { drink: r.order.drink }, total: r.total, feedback: [...r.feedback] })),
+      reports: payload.reports.map((r) => ({
+        order: { drink: r.order.drink },
+        total: r.total,
+        feedback: [...r.feedback],
+      })),
       masteryAfter: save.mastery,
       hints: habitHints(save),
     });
@@ -83,7 +87,9 @@ async function ensureGame(): Promise<Phaser.Game> {
       if (hook != null) {
         hook.game = instance;
         hook.booted = true;
-        instance.events.on('served', (report: unknown) => { hook.lastReport = report; });
+        instance.events.on('served', (report: unknown) => {
+          hook.lastReport = report;
+        });
       }
     }
     return instance;
@@ -122,8 +128,18 @@ if (import.meta.env.DEV) {
     startLevel,
     textureKeys: async () => {
       const instance = await ensureGame();
-      return ['machine', 'grinder', 'wand', 'jug-small', 'jug-large', 'counter', 'menu-board', 'customer-regular-1', 'vessel-demitasse', 'icon-star']
-        .filter((k) => instance.textures.exists(k));
+      return [
+        'machine',
+        'grinder',
+        'wand',
+        'jug-small',
+        'jug-large',
+        'counter',
+        'menu-board',
+        'customer-regular-1',
+        'vessel-demitasse',
+        'icon-star',
+      ].filter((k) => instance.textures.exists(k));
     },
     lastReport: null as unknown,
     canvasRect: async () => {

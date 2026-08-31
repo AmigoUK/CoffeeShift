@@ -1,7 +1,8 @@
 import type { SpriteData } from './customers';
 
 const machine: SpriteData = {
-  w: 32, h: 28,
+  w: 32,
+  h: 28,
   rows: [
     '................................',
     '..ssssssssssssssssssssssssssss..',
@@ -32,7 +33,8 @@ const machine: SpriteData = {
 };
 
 const grinder: SpriteData = {
-  w: 18, h: 22,
+  w: 18,
+  h: 22,
   rows: [
     '..................',
     '.....EEEEEE.......',
@@ -57,7 +59,8 @@ const grinder: SpriteData = {
 };
 
 const wand: SpriteData = {
-  w: 14, h: 20,
+  w: 14,
+  h: 20,
   rows: [
     '..........ss..',
     '.........ss...',
@@ -78,7 +81,8 @@ const wand: SpriteData = {
 };
 
 const jugSmall: SpriteData = {
-  w: 12, h: 14,
+  w: 12,
+  h: 14,
   rows: [
     '............',
     '...ss.......',
@@ -96,7 +100,8 @@ const jugSmall: SpriteData = {
 };
 
 const jugLarge: SpriteData = {
-  w: 14, h: 16,
+  w: 14,
+  h: 16,
   rows: [
     '..............',
     '....sss.......',
@@ -116,7 +121,8 @@ const jugLarge: SpriteData = {
 };
 
 const counter: SpriteData = {
-  w: 48, h: 14,
+  w: 48,
+  h: 14,
   rows: [
     '................................................',
     '................................................',
@@ -134,7 +140,8 @@ const counter: SpriteData = {
 };
 
 const menuBoard: SpriteData = {
-  w: 48, h: 32,
+  w: 48,
+  h: 32,
   rows: [
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
     'bNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNb',
@@ -155,5 +162,11 @@ const menuBoard: SpriteData = {
 };
 
 export const EQUIPMENT_SPRITES: Record<string, SpriteData> = {
-  machine, grinder, wand, 'jug-small': jugSmall, 'jug-large': jugLarge, counter, 'menu-board': menuBoard,
+  machine,
+  grinder,
+  wand,
+  'jug-small': jugSmall,
+  'jug-large': jugLarge,
+  counter,
+  'menu-board': menuBoard,
 };

@@ -10,12 +10,21 @@ test.describe('PWA (production preview)', () => {
     await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.webmanifest');
     const sw = await page.evaluate(async () => {
       const reg = await navigator.serviceWorker.getRegistration();
-      return { registered: reg != null, controlled: navigator.serviceWorker.controller != null, scope: reg?.scope ?? null };
+      return {
+        registered: reg != null,
+        controlled: navigator.serviceWorker.controller != null,
+        scope: reg?.scope ?? null,
+      };
     });
     expect(sw.registered).toBe(true);
     expect(sw.scope).toBe(`${BASE}/`);
 
-    for (const icon of ['icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-192.png', 'icons/maskable-512.png']) {
+    for (const icon of [
+      'icons/icon-192.png',
+      'icons/icon-512.png',
+      'icons/maskable-192.png',
+      'icons/maskable-512.png',
+    ]) {
       const res = await page.request.get(`${BASE}/${icon}`);
       expect(res.status(), icon).toBe(200);
       expect(res.headers()['content-type']).toContain('image/png');

@@ -46,11 +46,17 @@ test.describe('DOM shell', () => {
     await page.click('[data-action="recipe-book"]');
     await expect(page.locator('[data-screen="recipe-book"]')).toBeVisible();
     await expect(page.locator('.recipe-card h3')).toHaveText([
-      'Espresso', 'Americano', 'Latte', 'Cappuccino', 'Flat white',
+      'Espresso',
+      'Americano',
+      'Latte',
+      'Cappuccino',
+      'Flat white',
     ]);
     const disclaimers = page.locator('.disclaimer');
     expect(await disclaimers.count()).toBeGreaterThanOrEqual(3);
-    await expect(page.locator('[data-screen="recipe-book"]')).toContainText('Long Black is traditionally made water-first');
+    await expect(page.locator('[data-screen="recipe-book"]')).toContainText(
+      'Long Black is traditionally made water-first',
+    );
   });
 
   test('settings toggles persist across a reload', async ({ page }) => {

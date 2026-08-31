@@ -98,13 +98,29 @@ export const GAME_COPY = {
   binArmed: 'Tap Bin again to throw this drink away.',
   binned: 'Drink binned \u2014 starting fresh.',
   ticket: 'Ticket',
-  drink: 'Drink', size: 'Size', shots: 'Shots', milk: 'Milk', temperature: 'Temperature',
-  takeaway: 'To take away', extraHot: 'Extra hot', inHouse: 'In house',
-  small: 'Small', medium: 'Medium', large: 'Large',
-  whole: 'Whole milk', 'semi-skimmed': 'Semi-skimmed milk', oat: 'Oat milk',
-  stationEspresso: 'Espresso', stationMilk: 'Milk', stationAssembly: 'Assembly',
-  grindFine: 'Fine grind', grindMedium: 'Medium grind', grindCoarse: 'Coarse grind',
-  addEspresso: 'Add espresso', addWater: 'Add water', pourMilk: 'Pour milk',
+  drink: 'Drink',
+  size: 'Size',
+  shots: 'Shots',
+  milk: 'Milk',
+  temperature: 'Temperature',
+  takeaway: 'To take away',
+  extraHot: 'Extra hot',
+  inHouse: 'In house',
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
+  whole: 'Whole milk',
+  'semi-skimmed': 'Semi-skimmed milk',
+  oat: 'Oat milk',
+  stationEspresso: 'Espresso',
+  stationMilk: 'Milk',
+  stationAssembly: 'Assembly',
+  grindFine: 'Fine grind',
+  grindMedium: 'Medium grind',
+  grindCoarse: 'Coarse grind',
+  addEspresso: 'Add espresso',
+  addWater: 'Add water',
+  pourMilk: 'Pour milk',
   pullShotFirst: 'Pull the espresso first.',
   customerLeft: 'Customer left \u2014 too slow.',
   orderChange: 'Actually, make that a large, please.',
@@ -117,11 +133,20 @@ export const GAME_COPY = {
 export const RECIPE_BOOK_COPY = {
   title: 'Recipe Book',
   houseStandardTitle: 'The House Standard',
-  houseStandard: 'Recipes follow this caf\u00e9\u2019s House Standard. In other caf\u00e9s, recipes and serving sizes may vary.',
-  longBlackNote: 'Long Black is traditionally made water-first \u2014 recipes and serving sizes may vary between caf\u00e9s.',
-  sizes: 'Sizes', shots: 'Shots', vessel: 'Served in', milk: 'Milk', water: 'Water',
-  foam: 'Foam', parTime: 'Par time',
-  seconds: 's', ml: 'ml', cm: 'cm',
+  houseStandard:
+    'Recipes follow this caf\u00e9\u2019s House Standard. In other caf\u00e9s, recipes and serving sizes may vary.',
+  longBlackNote:
+    'Long Black is traditionally made water-first \u2014 recipes and serving sizes may vary between caf\u00e9s.',
+  sizes: 'Sizes',
+  shots: 'Shots',
+  vessel: 'Served in',
+  milk: 'Milk',
+  water: 'Water',
+  foam: 'Foam',
+  parTime: 'Par time',
+  seconds: 's',
+  ml: 'ml',
+  cm: 'cm',
 } as const;
 
 export const FOOTER_COPY = {
@@ -155,7 +180,8 @@ export const MODE_COPY = {
 /** Shown when the browser cannot run the game at all. */
 export const BOOT_ERROR_COPY = {
   title: 'Coffee Shift cannot start',
-  noCanvas: 'This browser could not create the graphics canvas the game needs. Try a different or newer browser, or turn hardware acceleration back on.',
+  noCanvas:
+    'This browser could not create the graphics canvas the game needs. Try a different or newer browser, or turn hardware acceleration back on.',
   noScript: 'Coffee Shift needs JavaScript. Please switch it on and reload the page.',
 } as const;
 

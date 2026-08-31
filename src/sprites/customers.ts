@@ -10,7 +10,8 @@ export interface SpriteData {
  */
 
 const regular1: SpriteData = {
-  w: 20, h: 22,
+  w: 20,
+  h: 22,
   rows: [
     '....................',
     '......KKKKKKKK......',
@@ -38,7 +39,8 @@ const regular1: SpriteData = {
 };
 
 const regular2: SpriteData = {
-  w: 20, h: 22,
+  w: 20,
+  h: 22,
   rows: [
     '....................',
     '......KKKKKKKK......',
@@ -66,7 +68,8 @@ const regular2: SpriteData = {
 };
 
 const student1: SpriteData = {
-  w: 20, h: 22,
+  w: 20,
+  h: 22,
   rows: [
     '....................',
     '......HHHHHHHH......',
@@ -94,7 +97,8 @@ const student1: SpriteData = {
 };
 
 const student2: SpriteData = {
-  w: 20, h: 22,
+  w: 20,
+  h: 22,
   rows: [
     '....................',
     '......HHHHHHHH......',
@@ -122,7 +126,8 @@ const student2: SpriteData = {
 };
 
 const commuter1: SpriteData = {
-  w: 20, h: 22,
+  w: 20,
+  h: 22,
   rows: [
     '....................',
     '......BBBBBBBB......',
@@ -150,7 +155,8 @@ const commuter1: SpriteData = {
 };
 
 const commuter2: SpriteData = {
-  w: 20, h: 22,
+  w: 20,
+  h: 22,
   rows: [
     '....................',
     '......BBBBBBBB......',

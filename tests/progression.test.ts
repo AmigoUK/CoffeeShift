@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  drinkWeight, habitHints, isLearnUnlocked, isPracticeUnlocked, isShiftUnlocked,
-  rankFor, recordResult, starsFor, updateEma,
+  drinkWeight,
+  habitHints,
+  isLearnUnlocked,
+  isPracticeUnlocked,
+  isShiftUnlocked,
+  rankFor,
+  recordResult,
+  starsFor,
+  updateEma,
 } from '../src/domain/progression';
 import { defaultSave } from '../src/domain/save';
 import type { DrinkOrder, ScoreReport } from '../src/domain/types';
@@ -35,7 +42,14 @@ describe('mastery EMA', () => {
 
   it('recordResult feeds drink and skill mastery plus fault counts', () => {
     const save = defaultSave();
-    const order: DrinkOrder = { drink: 'latte', size: 'medium', shots: 2, milk: 'whole', extraHot: false, takeaway: false };
+    const order: DrinkOrder = {
+      drink: 'latte',
+      size: 'medium',
+      shots: 2,
+      milk: 'whole',
+      extraHot: false,
+      takeaway: false,
+    };
     const report: ScoreReport = {
       total: 100,
       breakdown: { orderMatch: 45, recipe: 25, technique: 15, time: 10, waste: 5 },

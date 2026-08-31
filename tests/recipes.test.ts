@@ -8,8 +8,7 @@ describe('recipes data invariants', () => {
   });
 
   it('foam bands with tolerances do not overlap between drinks', () => {
-    const bands = DRINK_IDS
-      .map((d) => RECIPES[d].foamBandCm)
+    const bands = DRINK_IDS.map((d) => RECIPES[d].foamBandCm)
       .filter((b): b is [number, number] => b != null)
       .map(([lo, hi]) => [lo, hi] as const);
     for (let i = 0; i < bands.length; i++) {

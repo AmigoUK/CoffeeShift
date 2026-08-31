@@ -12,9 +12,7 @@ export type { SpriteData };
  * without changing the rendered image.
  */
 function normalize(sprite: SpriteData): SpriteData {
-  const rows = sprite.rows
-    .slice(0, sprite.h)
-    .map((row) => row.padEnd(sprite.w, '.').slice(0, sprite.w));
+  const rows = sprite.rows.slice(0, sprite.h).map((row) => row.padEnd(sprite.w, '.').slice(0, sprite.w));
   while (rows.length < sprite.h) rows.push('.'.repeat(sprite.w));
   return { w: sprite.w, h: sprite.h, rows };
 }

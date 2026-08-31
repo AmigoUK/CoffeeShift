@@ -3,7 +3,7 @@ export interface SaveData {
   settings: { sound: boolean; vibration: boolean; reduceAnimations: boolean };
   progress: { learn: number[]; practice: number[]; shift: { stars: number; best: number }[] }; // best total % per level, index = level
   rank: 'trainee' | 'barista';
-  mastery: Record<string, number>;        // skill id and 'drink:latte' style keys → 0–100
+  mastery: Record<string, number>; // skill id and 'drink:latte' style keys → 0–100
   errorTagCounts: Partial<Record<string, number>>;
   stats: { drinksServed: number; perfectOrders: number; shiftsPlayed: number };
 }

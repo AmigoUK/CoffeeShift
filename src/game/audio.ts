@@ -60,7 +60,14 @@ class Sfx {
     if (nodes == null || ctx == null) return;
     this.extractionNodes = null;
     nodes.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-    setTimeout(() => { try { nodes.noise.stop(); nodes.osc.stop(); } catch { /* already stopped */ } }, 200);
+    setTimeout(() => {
+      try {
+        nodes.noise.stop();
+        nodes.osc.stop();
+      } catch {
+        /* already stopped */
+      }
+    }, 200);
   }
 
   /** Steam hiss: filtered noise whose pitch tracks wand depth. */
@@ -96,14 +103,23 @@ class Sfx {
     if (nodes == null || ctx == null) return;
     this.steamNodes = null;
     nodes.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
-    setTimeout(() => { try { nodes.noise.stop(); } catch { /* already stopped */ } }, 250);
+    setTimeout(() => {
+      try {
+        nodes.noise.stop();
+      } catch {
+        /* already stopped */
+      }
+    }, 250);
   }
 
   /** Cup-on-saucer clink on Serve. */
   clink(): void {
     const ctx = this.context();
     if (ctx == null) return;
-    for (const [delay, freq] of [[0, 1720], [0.07, 2380]] as const) {
+    for (const [delay, freq] of [
+      [0, 1720],
+      [0.07, 2380],
+    ] as const) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';

@@ -6,17 +6,17 @@ import type { VesselId, DrinkId, SizeId } from './types';
  */
 export interface Recipe {
   drink: DrinkId;
-  name: string;                                       // display name, British English
+  name: string; // display name, British English
   allowedSizes: SizeId[];
-  defaultShots: Partial<Record<SizeId, number>>;      // per allowed size
-  houseVessel: string;                                // VesselId kept as string to avoid a UI import cycle
+  defaultShots: Partial<Record<SizeId, number>>; // per allowed size
+  houseVessel: string; // VesselId kept as string to avoid a UI import cycle
   milkDrink: boolean;
-  milkVolumeMl: Partial<Record<SizeId, number>>;      // milk drinks only
-  waterVolumeMl: Partial<Record<SizeId, number>>;     // americano only
-  foamBandCm: [number, number] | null;                // target band, display only
-  foamOkCm: [number, number] | null;                  // acceptance band (band ± tolerance, clamped at 0)
+  milkVolumeMl: Partial<Record<SizeId, number>>; // milk drinks only
+  waterVolumeMl: Partial<Record<SizeId, number>>; // americano only
+  foamBandCm: [number, number] | null; // target band, display only
+  foamOkCm: [number, number] | null; // acceptance band (band ± tolerance, clamped at 0)
   parSeconds: number;
-  assembly: string[];                                 // ordered: 'vessel' | 'shot' | 'water' | 'milk'
+  assembly: string[]; // ordered: 'vessel' | 'shot' | 'water' | 'milk'
 }
 
 export const MILK_DRINKS: DrinkId[] = ['latte', 'cappuccino', 'flat-white'];
@@ -49,9 +49,9 @@ export const LARGE_JUG_CAPACITY_ML = 600;
 
 export const VESSEL_CAPACITY_ML: Record<VesselId, number> = {
   demitasse: 90,
-  'americano-mug': 400,      // americano large is 350 ml of water
+  'americano-mug': 400, // americano large is 350 ml of water
   'cappuccino-cup': 250,
-  'latte-glass': 480,        // latte large is 420 ml of milk
+  'latte-glass': 480, // latte large is 420 ml of milk
   'flat-white-cup': 200,
   'takeaway-cup': 480,
 };
@@ -64,44 +64,74 @@ export const TAKEAWAY_EXTRA_SECONDS = 5;
 
 export const RECIPES: Record<DrinkId, Recipe> = {
   espresso: {
-    drink: 'espresso', name: 'Espresso',
-    allowedSizes: ['small'], defaultShots: { small: 1 },
-    houseVessel: 'demitasse', milkDrink: false,
-    milkVolumeMl: {}, waterVolumeMl: {},
-    foamBandCm: null, foamOkCm: null,
-    parSeconds: 25, assembly: ['vessel', 'shot'],
+    drink: 'espresso',
+    name: 'Espresso',
+    allowedSizes: ['small'],
+    defaultShots: { small: 1 },
+    houseVessel: 'demitasse',
+    milkDrink: false,
+    milkVolumeMl: {},
+    waterVolumeMl: {},
+    foamBandCm: null,
+    foamOkCm: null,
+    parSeconds: 25,
+    assembly: ['vessel', 'shot'],
   },
   americano: {
-    drink: 'americano', name: 'Americano',
-    allowedSizes: ['small', 'medium', 'large'], defaultShots: { small: 1, medium: 2, large: 2 },
-    houseVessel: 'americano-mug', milkDrink: false,
-    milkVolumeMl: {}, waterVolumeMl: { small: 150, medium: 250, large: 350 },
-    foamBandCm: null, foamOkCm: null,
-    parSeconds: 35, assembly: ['vessel', 'shot', 'water'],
+    drink: 'americano',
+    name: 'Americano',
+    allowedSizes: ['small', 'medium', 'large'],
+    defaultShots: { small: 1, medium: 2, large: 2 },
+    houseVessel: 'americano-mug',
+    milkDrink: false,
+    milkVolumeMl: {},
+    waterVolumeMl: { small: 150, medium: 250, large: 350 },
+    foamBandCm: null,
+    foamOkCm: null,
+    parSeconds: 35,
+    assembly: ['vessel', 'shot', 'water'],
   },
   latte: {
-    drink: 'latte', name: 'Latte',
-    allowedSizes: ['small', 'medium', 'large'], defaultShots: { small: 1, medium: 2, large: 3 },
-    houseVessel: 'latte-glass', milkDrink: true,
-    milkVolumeMl: { small: 180, medium: 300, large: 420 }, waterVolumeMl: {},
-    foamBandCm: [0.5, 1.0], foamOkCm: [0.5, 1.5],
-    parSeconds: 50, assembly: ['vessel', 'shot', 'milk'],
+    drink: 'latte',
+    name: 'Latte',
+    allowedSizes: ['small', 'medium', 'large'],
+    defaultShots: { small: 1, medium: 2, large: 3 },
+    houseVessel: 'latte-glass',
+    milkDrink: true,
+    milkVolumeMl: { small: 180, medium: 300, large: 420 },
+    waterVolumeMl: {},
+    foamBandCm: [0.5, 1.0],
+    foamOkCm: [0.5, 1.5],
+    parSeconds: 50,
+    assembly: ['vessel', 'shot', 'milk'],
   },
   cappuccino: {
-    drink: 'cappuccino', name: 'Cappuccino',
-    allowedSizes: ['small', 'medium'], defaultShots: { small: 1, medium: 2 },
-    houseVessel: 'cappuccino-cup', milkDrink: true,
-    milkVolumeMl: { small: 100, medium: 140 }, waterVolumeMl: {},
-    foamBandCm: [2.0, 3.0], foamOkCm: [1.5, 3.5],
-    parSeconds: 50, assembly: ['vessel', 'shot', 'milk'],
+    drink: 'cappuccino',
+    name: 'Cappuccino',
+    allowedSizes: ['small', 'medium'],
+    defaultShots: { small: 1, medium: 2 },
+    houseVessel: 'cappuccino-cup',
+    milkDrink: true,
+    milkVolumeMl: { small: 100, medium: 140 },
+    waterVolumeMl: {},
+    foamBandCm: [2.0, 3.0],
+    foamOkCm: [1.5, 3.5],
+    parSeconds: 50,
+    assembly: ['vessel', 'shot', 'milk'],
   },
   'flat-white': {
-    drink: 'flat-white', name: 'Flat white',
-    allowedSizes: ['small'], defaultShots: { small: 2 },
-    houseVessel: 'flat-white-cup', milkDrink: true,
-    milkVolumeMl: { small: 110 }, waterVolumeMl: {},
-    foamBandCm: [0, 0.5], foamOkCm: [0, 1.0],
-    parSeconds: 45, assembly: ['vessel', 'shot', 'milk'],
+    drink: 'flat-white',
+    name: 'Flat white',
+    allowedSizes: ['small'],
+    defaultShots: { small: 2 },
+    houseVessel: 'flat-white-cup',
+    milkDrink: true,
+    milkVolumeMl: { small: 110 },
+    waterVolumeMl: {},
+    foamBandCm: [0, 0.5],
+    foamOkCm: [0, 1.0],
+    parSeconds: 45,
+    assembly: ['vessel', 'shot', 'milk'],
   },
 };
 
@@ -116,7 +146,10 @@ export function defaultShots(drink: DrinkId, size: SizeId): number {
 }
 
 export function resolveShots(drink: DrinkId, size: SizeId, extraShot: boolean): number {
-  return Math.min(MODIFIER_LIMITS.maxShots, defaultShots(drink, size) + (extraShot ? MODIFIER_LIMITS.extraShotStep : 0));
+  return Math.min(
+    MODIFIER_LIMITS.maxShots,
+    defaultShots(drink, size) + (extraShot ? MODIFIER_LIMITS.extraShotStep : 0),
+  );
 }
 
 /**
@@ -128,11 +161,13 @@ export const PAR = { slackSeconds: 10, perShotSeconds: 27, milkSeconds: 12, wate
 
 export function parFor(order: { drink: DrinkId; shots: number; takeaway: boolean }): number {
   const recipe = RECIPES[order.drink];
-  return PAR.slackSeconds
-    + order.shots * PAR.perShotSeconds
-    + (recipe.milkDrink ? PAR.milkSeconds : 0)
-    + (order.drink === 'americano' ? PAR.waterSeconds : 0)
-    + (order.takeaway ? TAKEAWAY_EXTRA_SECONDS : 0);
+  return (
+    PAR.slackSeconds +
+    order.shots * PAR.perShotSeconds +
+    (recipe.milkDrink ? PAR.milkSeconds : 0) +
+    (order.drink === 'americano' ? PAR.waterSeconds : 0) +
+    (order.takeaway ? TAKEAWAY_EXTRA_SECONDS : 0)
+  );
 }
 
 export function isMilkDrink(drink: DrinkId): boolean {

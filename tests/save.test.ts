@@ -4,21 +4,45 @@ import { defaultSave, loadSave, resetMemorySave, savePersistence, writeSave, SAV
 
 class MockStorage implements Storage {
   private map = new Map<string, string>();
-  get length(): number { return this.map.size; }
-  clear(): void { this.map.clear(); }
-  getItem(key: string): string | null { return this.map.has(key) ? this.map.get(key)! : null; }
-  key(index: number): string | null { return [...this.map.keys()][index] ?? null; }
-  removeItem(key: string): void { this.map.delete(key); }
-  setItem(key: string, value: string): void { this.map.set(key, value); }
+  get length(): number {
+    return this.map.size;
+  }
+  clear(): void {
+    this.map.clear();
+  }
+  getItem(key: string): string | null {
+    return this.map.has(key) ? this.map.get(key)! : null;
+  }
+  key(index: number): string | null {
+    return [...this.map.keys()][index] ?? null;
+  }
+  removeItem(key: string): void {
+    this.map.delete(key);
+  }
+  setItem(key: string, value: string): void {
+    this.map.set(key, value);
+  }
 }
 
 class ThrowingStorage implements Storage {
-  get length(): number { throw new Error('denied'); }
-  clear(): void { throw new Error('denied'); }
-  getItem(): string | null { throw new Error('denied'); }
-  key(): string | null { throw new Error('denied'); }
-  removeItem(): void { throw new Error('denied'); }
-  setItem(): void { throw new Error('denied'); }
+  get length(): number {
+    throw new Error('denied');
+  }
+  clear(): void {
+    throw new Error('denied');
+  }
+  getItem(): string | null {
+    throw new Error('denied');
+  }
+  key(): string | null {
+    throw new Error('denied');
+  }
+  removeItem(): void {
+    throw new Error('denied');
+  }
+  setItem(): void {
+    throw new Error('denied');
+  }
 }
 
 afterEach(() => {

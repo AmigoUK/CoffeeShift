@@ -1,7 +1,8 @@
 import type { SpriteData } from './customers';
 
 const demitasse: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -23,7 +24,8 @@ const demitasse: SpriteData = {
 };
 
 const americanoMug: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -45,7 +47,8 @@ const americanoMug: SpriteData = {
 };
 
 const cappuccinoCup: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -67,7 +70,8 @@ const cappuccinoCup: SpriteData = {
 };
 
 const latteGlass: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '...KKKKKKKK.....',
@@ -89,7 +93,8 @@ const latteGlass: SpriteData = {
 };
 
 const flatWhiteCup: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '................',
@@ -111,7 +116,8 @@ const flatWhiteCup: SpriteData = {
 };
 
 const takeawayCup: SpriteData = {
-  w: 16, h: 16,
+  w: 16,
+  h: 16,
   rows: [
     '................',
     '....ssssss......',

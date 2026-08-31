@@ -34,7 +34,10 @@ const TAMP_HOLD_MS = 2200; // ≈17.6 kg at 8 kg/s
 
 // seeded sloppy rng → reproducible runs
 let seed = 20260829;
-const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const rnd = () => {
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return seed / 4294967296;
+};
 
 const clean = MODE === 'clean';
 
@@ -58,9 +61,13 @@ const [ROW0, ROW1, ROW2] = L.ROW_Y;
 const BAR = L.BAR_Y;
 const TABS = L.TABS_Y;
 const FEEDBACK_NEXT_Y = L.FEEDBACK.y + L.FEEDBACK.nextOffsetY;
-const sx = rect.width / 390, sy = rect.height / 844;
+const sx = rect.width / 390,
+  sy = rect.height / 844;
 
-const tap = async (gx, gy) => { await page.mouse.click(rect.left + gx * sx, rect.top + gy * sy); await page.waitForTimeout(60); };
+const tap = async (gx, gy) => {
+  await page.mouse.click(rect.left + gx * sx, rect.top + gy * sy);
+  await page.waitForTimeout(60);
+};
 const holdFor = async (gx, gy, ms) => {
   await page.mouse.move(rect.left + gx * sx, rect.top + gy * sy);
   await page.mouse.down();
@@ -78,13 +85,15 @@ async function waitState(pred, timeoutMs, label) {
   for (;;) {
     const s = await scene();
     if (pred(s)) return s;
-    if (Date.now() - start > timeoutMs) throw new Error(`waitState(${label}) timed out: ${JSON.stringify({ level: s.level?.id, brewing: s.ext.brewing, secs: Math.round(s.ext.brewSeconds), fill: Math.round(s.milk.fillMl), temp: Math.round(s.milk.tempC), steaming: s.milk.steaming })}`);
+    if (Date.now() - start > timeoutMs)
+      throw new Error(
+        `waitState(${label}) timed out: ${JSON.stringify({ level: s.level?.id, brewing: s.ext.brewing, secs: Math.round(s.ext.brewSeconds), fill: Math.round(s.milk.fillMl), temp: Math.round(s.milk.tempC), steaming: s.milk.steaming })}`,
+      );
     await page.waitForTimeout(120);
   }
 }
 let milkTrace = null;
 const shotAnomalies = [];
-
 
 async function ensureTab(station) {
   for (let guard = 0; guard < 5; guard++) {
@@ -118,7 +127,7 @@ async function playDrink() {
       const good = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.tampGood);
       if (good === true) break;
     }
-    const stopAt = clean ? 27.0 : (rnd() < 0.3 ? 22.5 : 28.5);
+    const stopAt = clean ? 27.0 : rnd() < 0.3 ? 22.5 : 28.5;
     await tap(CX2, ROW1); // brew
     // verify with a FRESH read; a blind re-tap could stop an already-running shot
     for (let guard = 0; guard < 3; guard++) {
@@ -131,7 +140,10 @@ async function playDrink() {
     // stop with read-before-tap discipline: never tap unless brewing is confirmed
     let pullsBefore = -1;
     for (let guard = 0; guard < 6; guard++) {
-      const ext = await readField(() => { const e = window.__COFFEE_SHIFT.activeScene().ext; return { brewing: e.brewing, pulls: e.pulls.length }; });
+      const ext = await readField(() => {
+        const e = window.__COFFEE_SHIFT.activeScene().ext;
+        return { brewing: e.brewing, pulls: e.pulls.length };
+      });
       if (pullsBefore < 0) pullsBefore = ext.pulls;
       if (!ext.brewing) break;
       await tap(CX2, ROW1);
@@ -140,7 +152,6 @@ async function playDrink() {
     const pullsAfter = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.pulls.length);
     if (pullsAfter !== pullsBefore + 1) shotAnomalies.push(`pulls ${pullsBefore}->${pullsAfter} after ${stopAt}s`);
   }
-
 
   // MILK
   let { s, order } = await currentOrder();
@@ -176,14 +187,21 @@ async function playDrink() {
         await page.waitForTimeout(150);
       }
     }
-    const tempBand = order.extraHot ? [68, 76] : (order.milk === 'oat' ? [50, 60] : [55, 65]);
+    const tempBand = order.extraHot ? [68, 76] : order.milk === 'oat' ? [50, 60] : [55, 65];
     const foamBand = FOAM_OK[order.drink];
     const tempTarget = clean ? (tempBand[0] + tempBand[1]) / 2 : tempBand[0] + rnd() * (tempBand[1] - tempBand[0] + 4);
-    const foamTarget = clean ? (foamBand[0] + foamBand[1]) / 2 : foamBand[0] - 0.2 + rnd() * (foamBand[1] - foamBand[0] + 0.9);
+    const foamTarget = clean
+      ? (foamBand[0] + foamBand[1]) / 2
+      : foamBand[0] - 0.2 + rnd() * (foamBand[1] - foamBand[0] + 0.9);
     const tempRateGs = order.milk === 'oat' ? 3.5 : 3;
     for (let guard = 0; guard < 4; guard++) {
       await tap(CX2, ROW1);
-      try { await waitState((x) => x.milk.steaming, 1800, 'steam start'); break; } catch { /* retry tap */ }
+      try {
+        await waitState((x) => x.milk.steaming, 1800, 'steam start');
+        break;
+      } catch {
+        /* retry tap */
+      }
     }
     const switchDepth = clean || rnd() >= 0.25;
     if (switchDepth) {
@@ -204,12 +222,24 @@ async function playDrink() {
     let jugOff = false;
     for (let guard = 0; guard < 4 && !jugOff; guard++) {
       if (guard > 0) await tap(CX2, ROW1);
-      try { await waitState((x) => !x.milk.steaming, 2500, 'jug off check'); jugOff = true; } catch { /* retry */ }
+      try {
+        await waitState((x) => !x.milk.steaming, 2500, 'jug off check');
+        jugOff = true;
+      } catch {
+        /* retry */
+      }
     }
     if (!jugOff) throw new Error('could not remove the jug');
     milkTrace = await readField(() => {
       const m = window.__COFFEE_SHIFT.activeScene().milk;
-      return { fill: Math.round(m.fillMl), temp: Math.round(m.tempC), foam: Math.round(m.foamCm * 100) / 100, depth: m.wandDepth, type: m.type, ruined: m.ruined };
+      return {
+        fill: Math.round(m.fillMl),
+        temp: Math.round(m.tempC),
+        foam: Math.round(m.foamCm * 100) / 100,
+        depth: m.wandDepth,
+        type: m.type,
+        ruined: m.ruined,
+      };
     });
   }
 
@@ -227,7 +257,9 @@ async function playDrink() {
     await tap(vx, vy);
     await page.waitForTimeout(200);
   }
-  const shotsAvailable = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.pulls.length - window.__COFFEE_SHIFT.activeScene().asm.shotsUsed);
+  const shotsAvailable = await readField(
+    () => window.__COFFEE_SHIFT.activeScene().ext.pulls.length - window.__COFFEE_SHIFT.activeScene().asm.shotsUsed,
+  );
   for (let i = 0; i < Math.min(order.shots, shotsAvailable); i++) await tap(CX0, ROW2);
   if (order.drink === 'americano') {
     const spec = WATER_ML.americano[order.size];
@@ -259,7 +291,9 @@ async function playLevel(id) {
         practice: [100, 100, 100, 100, 100],
         shift: Array.from({ length: 9 }, () => ({ stars: 1, best: 70 })),
       },
-      rank: 'barista', mastery: {}, errorTagCounts: {},
+      rank: 'barista',
+      mastery: {},
+      errorTagCounts: {},
       stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
     };
     localStorage.setItem('coffee-shift.save.v1', JSON.stringify(save));
@@ -271,10 +305,20 @@ async function playLevel(id) {
   for (;;) {
     const s = await scene();
     if (s.level == null) break; // level finished
-    if (s.feedbackCard != null) { await tap(CX1, FEEDBACK_NEXT_Y); await page.waitForTimeout(250); continue; }
-    if (s.transitioning) { await page.waitForTimeout(400); continue; } // customer lost transition
+    if (s.feedbackCard != null) {
+      await tap(CX1, FEEDBACK_NEXT_Y);
+      await page.waitForTimeout(250);
+      continue;
+    }
+    if (s.transitioning) {
+      await page.waitForTimeout(400);
+      continue;
+    } // customer lost transition
     const order = s.orders[s.drinkIndex] ?? null;
-    if (order == null) { await page.waitForTimeout(400); continue; }
+    if (order == null) {
+      await page.waitForTimeout(400);
+      continue;
+    }
     await playDrink();
     await tap(320, BAR); // serve
     const st = await scene();
@@ -307,14 +351,27 @@ for (const id of LEVELS) {
   const totals = reports.map((r) => r.total);
   const avg = totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
   const cats = reports.filter((r) => r.breakdown).map((r) => r.breakdown);
-  const mean = (key) => cats.length ? (cats.reduce((s2, c) => s2 + c[key], 0) / cats.length).toFixed(1) : '-';
+  const mean = (key) => (cats.length ? (cats.reduce((s2, c) => s2 + c[key], 0) / cats.length).toFixed(1) : '-');
   const lost = reports.filter((r) => r.lost).length;
   const faults = {};
   for (const r of reports) for (const f of r.feedback ?? []) faults[f] = (faults[f] ?? 0) + 1;
-  results.push({ id, orders: reports.length, avg, stars: avg >= 95 ? 3 : avg >= 85 ? 2 : avg >= 70 ? 1 : 0, lost,
-    orderMatch: mean('orderMatch'), recipe: mean('recipe'), technique: mean('technique'), time: mean('time'), waste: mean('waste'), faults,
-    drinks: reports.map((r) => ({ total: r.total, feedback: r.feedback, milk: r.milk ?? null })) });
-  console.log(`${id}  n=${reports.length}  avg=${avg}%  stars=${avg >= 95 ? 3 : avg >= 85 ? 2 : avg >= 70 ? 1 : 0}  lost=${lost}  o=${mean('orderMatch')} r=${mean('recipe')} t=${mean('technique')} time=${mean('time')} w=${mean('waste')}  [${Math.round((Date.now() - t0) / 1000)}s]`);
+  results.push({
+    id,
+    orders: reports.length,
+    avg,
+    stars: avg >= 95 ? 3 : avg >= 85 ? 2 : avg >= 70 ? 1 : 0,
+    lost,
+    orderMatch: mean('orderMatch'),
+    recipe: mean('recipe'),
+    technique: mean('technique'),
+    time: mean('time'),
+    waste: mean('waste'),
+    faults,
+    drinks: reports.map((r) => ({ total: r.total, feedback: r.feedback, milk: r.milk ?? null })),
+  });
+  console.log(
+    `${id}  n=${reports.length}  avg=${avg}%  stars=${avg >= 95 ? 3 : avg >= 85 ? 2 : avg >= 70 ? 1 : 0}  lost=${lost}  o=${mean('orderMatch')} r=${mean('recipe')} t=${mean('technique')} time=${mean('time')} w=${mean('waste')}  [${Math.round((Date.now() - t0) / 1000)}s]`,
+  );
 }
 
 writeFileSync(OUT, JSON.stringify({ mode: MODE, scale: SCALE, results, pageErrors }, null, 2));

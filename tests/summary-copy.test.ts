@@ -11,8 +11,9 @@ describe('summarySentence', () => {
   });
 
   it('joins two faults with "and", capitalises the first and appends a hint', () => {
-    expect(summarySentence({ opener: 'correctRecipe', clauses: ['MILK_TOO_HOT', 'FOAM_TOO_THICK'] }, 'Latte'))
-      .toBe('Correct recipe. The milk was overheated and the foam was too thick for a latte. Practise milk temperature control.');
+    expect(summarySentence({ opener: 'correctRecipe', clauses: ['MILK_TOO_HOT', 'FOAM_TOO_THICK'] }, 'Latte')).toBe(
+      'Correct recipe. The milk was overheated and the foam was too thick for a latte. Practise milk temperature control.',
+    );
   });
 
   it('uses an Oxford comma from three faults up', () => {
@@ -24,12 +25,12 @@ describe('summarySentence', () => {
   });
 
   it('substitutes the drink name into clauses that need it', () => {
-    expect(summarySentence({ opener: 'correctRecipe', clauses: ['FOAM_TOO_THIN'] }, 'Flat White'))
-      .toContain('too thin for a flat white');
+    expect(summarySentence({ opener: 'correctRecipe', clauses: ['FOAM_TOO_THIN'] }, 'Flat White')).toContain(
+      'too thin for a flat white',
+    );
   });
 
   it('opens differently when the wrong drink was made', () => {
-    expect(summarySentence({ opener: 'wrongDrink', clauses: [] }, 'Latte'))
-      .toBe('Not quite the drink ordered.');
+    expect(summarySentence({ opener: 'wrongDrink', clauses: [] }, 'Latte')).toBe('Not quite the drink ordered.');
   });
 });
