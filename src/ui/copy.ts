@@ -218,6 +218,8 @@ export const TOAST_COPY = {
   milkTooHot: 'The milk is too hot \u2014 remove the jug now.',
   milkScorched: 'The milk is scorched \u2014 empty the jug and start again.',
   ticketChanged: 'The ticket changed \u2014 check it!',
+  jugFull: 'The jug is full \u2014 stop pouring.',
+  vesselFull: 'The cup is full \u2014 stop pouring.',
 } as const;
 
 export const BREAKDOWN_COPY = {

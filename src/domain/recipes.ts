@@ -1,4 +1,4 @@
-import type { DrinkId, SizeId } from './types';
+import type { VesselId, DrinkId, SizeId } from './types';
 
 /**
  * The House Standard. Single source of truth for every gameplay judgement
@@ -36,6 +36,24 @@ export const EXTRACTION = {
   tampBandKg: [15, 20] as [number, number],
   tampRampKgPerS: 8, // 15-20 kg in 0.625 s of hold — a touch-releasable window
   timeBandSeconds: [24, 31] as [number, number],
+};
+
+/**
+ * Physical capacities. Milk and water used to accumulate without any ceiling, so holding a
+ * pour button simply kept counting — a jug could reach several litres, which made the
+ * status line nonsense and skewed the recipe score. Each figure sits above the largest
+ * volume the House Standard asks that vessel to hold.
+ */
+export const SMALL_JUG_CAPACITY_ML = 350;
+export const LARGE_JUG_CAPACITY_ML = 600;
+
+export const VESSEL_CAPACITY_ML: Record<VesselId, number> = {
+  demitasse: 90,
+  'americano-mug': 400,      // americano large is 350 ml of water
+  'cappuccino-cup': 250,
+  'latte-glass': 480,        // latte large is 420 ml of milk
+  'flat-white-cup': 200,
+  'takeaway-cup': 480,
 };
 
 /** Above this the House Standard calls for the large jug; at or below it, the small one. */

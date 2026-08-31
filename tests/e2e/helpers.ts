@@ -20,7 +20,7 @@ export interface SceneState {
     brewSeconds: number; pulls: { tampOk: boolean; seconds: number }[]; doseGrams: number;
   };
   milk: { fillMl: number; tempC: number; foamCm: number; steaming: boolean; ruined: boolean; used: boolean; filling: boolean; jug: string | null };
-  asm: { vessel: string | null; shotsUsed: number; actions: string[] };
+  asm: { vessel: string | null; shotsUsed: number; actions: string[]; waterMl: number | null };
   feedbackCard: unknown;
 }
 

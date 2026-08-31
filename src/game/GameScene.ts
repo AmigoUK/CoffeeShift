@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { DrinkOrder, ExtractionPull, FeedbackId, JugId, MilkId, MilkResult, PreparedDrink, ScoreReport, VesselId } from '../domain/types';
-import { EXTRACTION, MILK_TEMP, parFor, recipeFor } from '../domain/recipes';
+import { EXTRACTION, LARGE_JUG_CAPACITY_ML, MILK_TEMP, SMALL_JUG_CAPACITY_ML, VESSEL_CAPACITY_ML, parFor, recipeFor } from '../domain/recipes';
 import { BAR_Y, BTN, COL_X, CONTROLS_TOP, FEEDBACK, GAME_HEIGHT, GAME_WIDTH, GUIDED_Y, ROW_Y, STATION_STATUS_Y, TAB_PADDING, TABS_Y, TOAST_Y, TOP_PANEL } from './layout';
 import { generateOrders, mulberry32, archetypeForOrderIndex, orderLine } from '../domain/orders';
 import { levelById } from '../domain/levels';
@@ -815,8 +815,13 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.milk.filling) {
-      this.milk.fillMl += 90 * dt;
+      // A jug holds what a jug holds: without this the volume just kept climbing for as
+      // long as the button was held.
+      const capacity = this.milk.jug === 'large-jug' ? LARGE_JUG_CAPACITY_ML : SMALL_JUG_CAPACITY_ML;
+      const before = this.milk.fillMl;
+      this.milk.fillMl = Math.min(this.milk.fillMl + 90 * dt, capacity);
       this.milk.used = true;
+      if (before < capacity && this.milk.fillMl >= capacity) this.toast(TOAST_COPY.jugFull);
     }
     if (this.milk.steaming) {
       const rate = this.milk.type === 'oat' ? 3.5 : 3;
@@ -836,7 +841,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.asm.pouringWater) {
-      this.asm.waterMl = (this.asm.waterMl ?? 0) + 60 * dt;
+      const capacity = this.asm.vessel != null ? VESSEL_CAPACITY_ML[this.asm.vessel] : VESSEL_CAPACITY_ML.demitasse;
+      const before = this.asm.waterMl ?? 0;
+      this.asm.waterMl = Math.min(before + 60 * dt, capacity);
+      if (before < capacity && this.asm.waterMl >= capacity) this.toast(TOAST_COPY.vesselFull);
     }
 
     if ((this.ext.tampHeld || this.ext.brewing || this.milk.filling || this.milk.steaming || this.asm.pouringWater)) {

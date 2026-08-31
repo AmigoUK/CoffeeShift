@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { callHook, canvasScale, clearSave, readSave, sceneSatisfies, shiftUnlockedSave, tap, waitForBoot, writeSave } from './helpers';
 import { BAR_Y, COL_X, ROW_Y, TABS_Y } from '../../src/game/layout';
+import { SMALL_JUG_CAPACITY_ML, VESSEL_CAPACITY_ML } from '../../src/domain/recipes';
 
 // Button positions come from the scene's layout module, not from copied numbers.
 const DOSE = [COL_X[0], ROW_Y[1]] as const;
@@ -35,6 +36,38 @@ test.describe('regressions', () => {
     await page.goto('/');
     await waitForBoot(page);
     await clearSave(page);
+  });
+
+  test('vessels have a capacity: milk and water stop at the brim', async ({ page }) => {
+    await startLevel(page, 'L3');
+    await tap(page, COL_X[1], TABS_Y);   // milk station
+    await tap(page, COL_X[0], ROW_Y[0]); // small jug
+
+    // Hold Fill far longer than the jug could possibly take. At 90 ml/s an unclamped
+    // fill reaches roughly 540 ml in six seconds.
+    const { left, top, sx, sy } = await canvasScale(page);
+    await page.mouse.move(left + COL_X[0] * sx, top + ROW_Y[1] * sy);
+    await page.mouse.down();
+    await page.waitForTimeout(6000);
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+
+    const milk = (await sceneSatisfies(page, () => true)).milk;
+    expect(milk.fillMl).toBeGreaterThan(0);
+    expect(milk.fillMl).toBeLessThanOrEqual(SMALL_JUG_CAPACITY_ML);
+
+    // Same for water in the assembly station.
+    await tap(page, COL_X[2], TABS_Y);   // assembly
+    await tap(page, COL_X[0], ROW_Y[0]); // demitasse, the smallest vessel
+    await page.mouse.move(left + COL_X[1] * sx, top + ROW_Y[2] * sy);
+    await page.mouse.down();
+    await page.waitForTimeout(6000);
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+
+    const asm = (await sceneSatisfies(page, () => true)).asm;
+    expect(asm.waterMl ?? 0).toBeGreaterThan(0);
+    expect(asm.waterMl ?? 0).toBeLessThanOrEqual(VESSEL_CAPACITY_ML.demitasse);
   });
 
   test('the feedback card renders a phrased summary, not raw fault ids', async ({ page }) => {
