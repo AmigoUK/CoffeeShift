@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { SAVE_KEY } from '../../src/domain/save';
 
 /** Snapshot of the dev-only data hook injected by src/main.ts on the dev server. */
 export interface HookData {
@@ -7,7 +8,7 @@ export interface HookData {
     total: number;
     breakdown: { orderMatch: number; recipe: number; technique: number; time: number; waste: number };
     feedback: string[];
-    summarySentence: string;
+    summary: { opener: string; clauses: string[] };
   } | null;
 }
 
@@ -116,4 +117,40 @@ export async function hold(page: Page, gx: number, gy: number, ms: number): Prom
   await page.waitForTimeout(ms);
   await page.mouse.up();
   await page.waitForTimeout(120);
+}
+
+/**
+ * Save helpers. SAVE_KEY cannot be referenced inside page.evaluate — that body runs in the
+ * browser, where a Node-side binding does not exist — so it is passed in as an argument.
+ */
+export async function clearSave(page: Page): Promise<void> {
+  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+}
+
+export async function readSave<T = Record<string, unknown>>(page: Page): Promise<T | null> {
+  return page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw != null ? (JSON.parse(raw) as unknown) : null;
+  }, SAVE_KEY) as Promise<T | null>;
+}
+
+export async function writeSave(page: Page, save: unknown): Promise<void> {
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [SAVE_KEY, JSON.stringify(save)] as const);
+}
+
+/** A completed-Learn save that unlocks the Shift levels, used by several specs. */
+export function shiftUnlockedSave(): Record<string, unknown> {
+  return {
+    version: 1,
+    settings: { sound: false, vibration: false, reduceAnimations: true },
+    progress: {
+      learn: [100, 100, 100, 100, 100],
+      practice: [100, 100, 100, 100, 100],
+      shift: Array.from({ length: 9 }, () => ({ stars: 1, best: 70 })),
+    },
+    rank: 'barista',
+    mastery: {},
+    errorTagCounts: {},
+    stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
+  };
 }

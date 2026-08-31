@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { activeScene, callHook, hold, holdUntil, hookData, sceneSatisfies, tap, waitForBoot } from './helpers';
+import { activeScene, callHook, clearSave, hold, holdUntil, hookData, readSave, sceneSatisfies, tap, waitForBoot, writeSave } from './helpers';
 import { BAR_Y, COL_X, FEEDBACK, ROW_Y, TABS_Y } from '../../src/game/layout';
 
 // Button positions derived from the scene's own layout module, so a layout change moves
@@ -56,7 +56,7 @@ test.describe('gameplay', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForBoot(page);
-    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+    await clearSave(page);
   });
 
   test('Learn L1: guided espresso flow scores ≥98 and reaches the summary', async ({ page }) => {
@@ -117,19 +117,19 @@ test.describe('gameplay', () => {
     const report = (await hookData(page)).lastReport;
     expect(report!.feedback).toContain('MILK_TOO_HOT');
     expect(report!.feedback).toContain('FOAM_TOO_THICK');
-    expect(report!.summarySentence.toLowerCase()).toContain('latte');
+    // The domain reports faults as data now; the wording is asserted in tests/summary-copy.
+    // FOAM_TOO_THICK is the clause that names the drink, which is what this used to check
+    // by looking for "latte" in the finished sentence.
+    expect(report!.summary.clauses).toContain('FOAM_TOO_THICK');
   });
 
   test('Shift meta: S1 unlocks after Learn, serves, records progress and Retry works', async ({ page }) => {
     test.slow();
     // Dev shortcut: mark all Learn lessons complete.
-    await page.evaluate(() => {
-      const raw = localStorage.getItem('coffee-shift.save.v1');
-      const save = raw != null ? JSON.parse(raw) as { progress?: { learn?: number[] } } : { progress: {} };
-      save.progress = save.progress ?? {};
-      save.progress.learn = [100, 100, 100, 100, 100];
-      localStorage.setItem('coffee-shift.save.v1', JSON.stringify(save));
-    });
+    const save = (await readSave<{ progress?: { learn?: number[] } }>(page)) ?? { progress: {} };
+    save.progress = save.progress ?? {};
+    save.progress.learn = [100, 100, 100, 100, 100];
+    await writeSave(page, save);
     await startLevel(page, 'S1');
     const orders = (await activeScene(page)).orders;
     expect(orders.length).toBe(3);
@@ -143,12 +143,8 @@ test.describe('gameplay', () => {
     await expect(page.locator('[data-screen="summary"]')).toBeVisible();
     await expect(page.locator('.screen__title')).toHaveText('Shift complete!');
 
-    const shiftProgress = await page.evaluate(() => {
-      const raw = localStorage.getItem('coffee-shift.save.v1');
-      if (raw == null) return null;
-      const parsed = JSON.parse(raw) as { progress?: { shift?: { stars: number; best: number }[] } };
-      return parsed.progress?.shift?.[0] ?? null;
-    });
+    const stored = await readSave<{ progress?: { shift?: { stars: number; best: number }[] } }>(page);
+    const shiftProgress = stored?.progress?.shift?.[0] ?? null;
     expect(shiftProgress).not.toBeNull();
     expect(shiftProgress!.best).toBeGreaterThanOrEqual(0);
     expect(shiftProgress!.stars).toBeGreaterThanOrEqual(0);

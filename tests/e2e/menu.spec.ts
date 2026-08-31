@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForBoot } from './helpers';
+import { readSave, waitForBoot } from './helpers';
 
 test.describe('DOM shell', () => {
   test.beforeEach(async ({ page }) => {
@@ -58,12 +58,8 @@ test.describe('DOM shell', () => {
     await expect(page.locator('[data-screen="settings"]')).toBeVisible();
     await page.click('#set-sound');
     await page.click('#set-reduce');
-    const persisted = await page.evaluate(() => {
-      const raw = localStorage.getItem('coffee-shift.save.v1');
-      if (raw == null) return null;
-      const parsed = JSON.parse(raw) as { settings?: { sound?: boolean; reduceAnimations?: boolean } };
-      return parsed.settings ?? null;
-    });
+    const stored = await readSave<{ settings?: { sound?: boolean; reduceAnimations?: boolean } }>(page);
+    const persisted = stored?.settings ?? null;
     expect(persisted).toMatchObject({ sound: false, reduceAnimations: true });
 
     await page.reload();

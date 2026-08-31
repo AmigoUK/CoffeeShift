@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { callHook, canvasScale, sceneSatisfies, tap, waitForBoot } from './helpers';
+import { callHook, canvasScale, clearSave, readSave, sceneSatisfies, shiftUnlockedSave, tap, waitForBoot, writeSave } from './helpers';
 import { BAR_Y, COL_X, ROW_Y, TABS_Y } from '../../src/game/layout';
 
 // Button positions come from the scene's layout module, not from copied numbers.
@@ -34,7 +34,7 @@ test.describe('regressions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForBoot(page);
-    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+    await clearSave(page);
   });
 
   test('binning a drink needs a second tap and can be undone', async ({ page }) => {
@@ -80,16 +80,16 @@ test.describe('regressions', () => {
   test('a hostile mastery key from storage is not rendered as HTML', async ({ page }) => {
     // The summary falls back to the raw key when it is not a known drink, and that key comes
     // straight out of localStorage. Anything with page access could plant markup there.
+    await writeSave(page, {
+      version: 1,
+      settings: { sound: false, vibration: false, reduceAnimations: true },
+      progress: { learn: [], practice: [], shift: [] },
+      rank: 'trainee',
+      mastery: { 'drink:<img src=x onerror="window.__pwned=1">': 50 },
+      errorTagCounts: {},
+      stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
+    });
     await page.evaluate(() => {
-      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
-        version: 1,
-        settings: { sound: false, vibration: false, reduceAnimations: true },
-        progress: { learn: [], practice: [], shift: [] },
-        rank: 'trainee',
-        mastery: { 'drink:<img src=x onerror="window.__pwned=1">': 50 },
-        errorTagCounts: {},
-        stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
-      }));
       const w = window as unknown as Record<string, unknown>;
       const hook = w.__COFFEE_SHIFT as { game: { events: { emit: (n: string, p: unknown) => void } } };
       hook.game.events.emit('level-complete', { levelId: 'L1', reports: [], masteryBefore: {} });
@@ -110,28 +110,23 @@ test.describe('regressions', () => {
   test('changing a setting keeps progress written by the game', async ({ page }) => {
     // screens.ts caches the save at module load. The game writes its own copy after every
     // serve, so a setting toggled afterwards used to write the stale cache back and wipe it.
-    await page.evaluate(() => {
-      // A complete save: loadSave() rejects anything without version === 1, so a partial
-      // object here would be replaced by defaults and prove nothing.
-      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
-        version: 1,
-        settings: { sound: true, vibration: true, reduceAnimations: false },
-        progress: { learn: [96, 0, 0, 0, 0], practice: [], shift: [] },
-        rank: 'trainee',
-        mastery: { 'drink:latte': 88 },
-        errorTagCounts: {},
-        stats: { drinksServed: 4, perfectOrders: 2, shiftsPlayed: 1 },
-      }));
+    // A complete save: loadSave() rejects anything without version === 1, so a partial
+    // object here would be replaced by defaults and prove nothing.
+    await writeSave(page, {
+      version: 1,
+      settings: { sound: true, vibration: true, reduceAnimations: false },
+      progress: { learn: [96, 0, 0, 0, 0], practice: [], shift: [] },
+      rank: 'trainee',
+      mastery: { 'drink:latte': 88 },
+      errorTagCounts: {},
+      stats: { drinksServed: 4, perfectOrders: 2, shiftsPlayed: 1 },
     });
 
     await page.click('[data-action="settings"]');
     await page.locator('#set-sound').click();
     await page.waitForTimeout(300);
 
-    const after = await page.evaluate(() => {
-      const raw = localStorage.getItem('coffee-shift.save.v1');
-      return raw != null ? JSON.parse(raw) : null;
-    });
+    const after = await readSave<{ mastery?: Record<string, number>; stats?: { drinksServed?: number } }>(page);
     expect(after?.mastery?.['drink:latte']).toBe(88);
     expect(after?.stats?.drinksServed).toBe(4);
   });
@@ -171,19 +166,7 @@ test.describe('regressions', () => {
     // multiDrink is presentation only: generateOrders ignores it, and each order gets
     // its own customer, its own patience and its own lost-customer path. The counter
     // must not halve them.
-    await page.evaluate(() => {
-      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
-        version: 1,
-        settings: { sound: false, vibration: false, reduceAnimations: true },
-        progress: {
-          learn: [100, 100, 100, 100, 100],
-          practice: [100, 100, 100, 100, 100],
-          shift: Array.from({ length: 9 }, () => ({ stars: 1, best: 70 })),
-        },
-        rank: 'barista', mastery: {}, errorTagCounts: {},
-        stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
-      }));
-    });
+    await writeSave(page, shiftUnlockedSave());
     await startLevel(page, 'S9');
 
     const queue = await page.evaluate(() => {
@@ -215,19 +198,7 @@ test.describe('regressions', () => {
   test('a multi-drink ticket shows the pair being worked on, not the first pair', async ({ page }) => {
     // S9 is a multiDrink level. Unlock the shift levels, then pin a known set of
     // orders so the assertions cannot be satisfied by a coincidental repeat.
-    await page.evaluate(() => {
-      localStorage.setItem('coffee-shift.save.v1', JSON.stringify({
-        version: 1,
-        settings: { sound: false, vibration: false, reduceAnimations: true },
-        progress: {
-          learn: [100, 100, 100, 100, 100],
-          practice: [100, 100, 100, 100, 100],
-          shift: Array.from({ length: 9 }, () => ({ stars: 1, best: 70 })),
-        },
-        rank: 'barista', mastery: {}, errorTagCounts: {},
-        stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
-      }));
-    });
+    await writeSave(page, shiftUnlockedSave());
     await startLevel(page, 'S9');
 
     const ticket = await page.evaluate(() => {
@@ -335,7 +306,7 @@ test.describe('touch targets on the smallest supported phone', () => {
   test('every control clears 44px and no two rows overlap', async ({ page }) => {
     await page.goto('/');
     await waitForBoot(page);
-    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+    await clearSave(page);
     await startLevel(page, 'L3');
 
     const controls = await page.evaluate(() => {
@@ -501,7 +472,7 @@ test.describe('accessibility', () => {
     // Toasts are drawn on the canvas, so they are mirrored into a live region.
     await page.goto('/');
     await waitForBoot(page);
-    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+    await clearSave(page);
     await startLevel(page, 'L1');
     await tap(page, 195, BAR_Y);   // arms Bin, which toasts
     await page.waitForTimeout(400);
