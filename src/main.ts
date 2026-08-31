@@ -1,3 +1,4 @@
+import './style.css';
 import Phaser from 'phaser';
 import { BootScene } from './game/BootScene';
 import { setTimeScale } from './game/timeScale';

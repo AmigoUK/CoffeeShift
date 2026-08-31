@@ -124,6 +124,19 @@ export class GameScene extends Phaser.Scene {
     this.transitioning = false;
     this.orderChanged = false;
     this.orderChangeAt = null;
+    // Phaser reuses the scene instance across scene.start, so every field below still
+    // holds last run's value. A feedback card left open when the player exits via
+    // Menu would keep update() and serve() short-circuiting for the whole next level,
+    // and a stale activeStation makes startDrink's switchStation('espresso') a no-op,
+    // leaving the first station blank.
+    this.feedbackCard = null;
+    this.activeStation = null;
+    this.toastText = null;
+    this.controlsBand = null;
+    this.ticketFields = {};
+    this.clockGame = 0;
+    this.orderStartClock = 0;
+    this.wasteEvents = [];
 
     this.add.rectangle(195, 135, 390, 270, COL.panel).setStrokeStyle(2, COL.dark);
     this.add.rectangle(195, 730, 390, 224, COL.panel).setStrokeStyle(2, COL.dark);
@@ -634,7 +647,7 @@ export class GameScene extends Phaser.Scene {
     const { pouringWater: _pw, undoStack: _us, ...snapshot } = this.asm;
     void _pw; void _us;
     this.asm = { ...snapshot, ...prev, pouringWater: false, undoStack: this.asm.undoStack };
-    const sprite = this.children.getByName('vessel-sprite') as Phaser.GameObjects.Image | null;
+    const sprite = this.stationView?.getByName('vessel-sprite') as Phaser.GameObjects.Image | null;
     if (sprite != null && this.asm.vessel != null) sprite.setTexture(`vessel-${this.asm.vessel}`);
     this.refreshControls();
   }
@@ -642,7 +655,7 @@ export class GameScene extends Phaser.Scene {
   private binDrink(): void {
     this.wasteEvents.push('binned-drink');
     this.asm = freshAssembly();
-    const sprite = this.children.getByName('vessel-sprite') as Phaser.GameObjects.Image | null;
+    const sprite = this.stationView?.getByName('vessel-sprite') as Phaser.GameObjects.Image | null;
     sprite?.setTexture('vessel-demitasse');
     this.toast('Drink binned \u2014 starting fresh.');
     this.refreshControls();
@@ -651,7 +664,7 @@ export class GameScene extends Phaser.Scene {
   private refreshStationText(): void {
     const order = this.currentDrink();
     const recipe = order != null ? recipeFor(order.drink) : null;
-    const extStatus = this.children.getByName('ext-status') as Phaser.GameObjects.Text | null;
+    const extStatus = this.stationView?.getByName('ext-status') as Phaser.GameObjects.Text | null;
     if (extStatus != null) {
       extStatus.setText([
         `Grind ${this.ext.grind} \u00b7 dose ${this.ext.doseGrams} g (target 18 \u00b12) \u00b7 tamp ${Math.round(this.ext.tampKg)} kg`,
@@ -660,7 +673,7 @@ export class GameScene extends Phaser.Scene {
           : `Shots pulled: ${this.ext.pulls.length}`,
       ].join('\n'));
     }
-    const milkStatus = this.children.getByName('milk-status') as Phaser.GameObjects.Text | null;
+    const milkStatus = this.stationView?.getByName('milk-status') as Phaser.GameObjects.Text | null;
     if (milkStatus != null && recipe != null && order != null) {
       const spec = recipe.milkVolumeMl[order.size] ?? null;
       const tempTarget = order.extraHot ? MILK_TEMP.extraHot.target : this.milk.type === 'oat' ? MILK_TEMP.oat.target : MILK_TEMP.dairy.target;
@@ -669,7 +682,7 @@ export class GameScene extends Phaser.Scene {
         `Fill ${Math.round(this.milk.fillMl)}${spec != null ? `/${spec}` : ''} ml \u00b7 ${Math.round(this.milk.tempC)}\u00b0C \u00b7 foam ${this.milk.foamCm.toFixed(1)} cm \u00b7 target ${tempTarget[0]}\u2013${tempTarget[1]}\u00b0C`,
       ].join('\n'));
     }
-    const asmStatus = this.children.getByName('asm-status') as Phaser.GameObjects.Text | null;
+    const asmStatus = this.stationView?.getByName('asm-status') as Phaser.GameObjects.Text | null;
     if (asmStatus != null) {
       const shotsAvailable = this.ext.pulls.length - this.asm.shotsUsed;
       asmStatus.setText([
@@ -731,7 +744,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     for (const x of [76, 124]) {
-      const stream = this.children.getByName(`brew-stream-${x}`) as Phaser.GameObjects.Rectangle | null;
+      const stream = this.stationView?.getByName(`brew-stream-${x}`) as Phaser.GameObjects.Rectangle | null;
       if (stream == null) continue;
       stream.setVisible(this.ext.brewing);
       stream.alpha = this.save.settings.reduceAnimations ? 1 : 0.55 + 0.3 * Math.sin(this.clockGame * 9);
