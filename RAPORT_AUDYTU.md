@@ -182,15 +182,17 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 
 ### 3. Średnie (pierwszy sprint po wdrożeniu)
 
-- Wprowadzić ESLint/Prettier lub Biome — bez tego naruszenia konwencji będą wracać
-- Przenieść ~48 literałów tekstowych z `GameScene.ts` do `copy.ts`
-- Odwrócić zależność `domain/grading.ts` → `ui/copy`
-- Usunąć zduplikowane wartości receptur z kodu sceny
-- Wydzielić nazwane stałe layoutu (`ROW_Y`, `BTN`, `COL_X`) i powiązać z nimi `buildBottomRow`
-- Sparametryzować porty `4180`/`5173`; zaimportować `SAVE_KEY` w testach E2E
-- Uporządkować `CHANGELOG.md` zgodnie z Keep a Changelog
-- Dodać `aria-live`, zarządzanie fokusem i alternatywę tekstową dla canvasu
-- Rozważyć code splitting Phasera (365 kB gzip, longtask 469 ms)
+- ✅ ~~Wprowadzić linter~~ — **v0.5.0**. Biome, `npm run lint` w CI przed typecheckiem
+- ✅ ~~Przenieść literały tekstowe z `GameScene.ts` do `copy.ts`~~ — **v0.5.0**. Zmierzone: 47 → 0
+- ✅ ~~Odwrócić zależność `domain/grading.ts` → `ui/copy`~~ — **v0.5.0**. Domena zwraca `ScoreSummary` jako dane; zdanie składa `summarySentence()` w warstwie copy
+- ✅ ~~Usunąć zduplikowane wartości receptur z kodu sceny~~ — **v0.5.0**. Progi dawki, tampera i czasu czytane z `EXTRACTION`, próg dzbanka to `SMALL_JUG_MAX_ML`
+- ✅ ~~Wydzielić nazwane stałe layoutu~~ — **v0.4.0**, `src/game/layout.ts`
+- ✅ ~~Zaimportować `SAVE_KEY` w testach E2E~~ — **v0.5.0**, przez helpery `clearSave`/`readSave`/`writeSave`
+- ✅ ~~Uporządkować `CHANGELOG.md`~~ — **v0.2.0**
+- ✅ ~~Dodać `aria-live`, zarządzanie fokusem i alternatywę tekstową dla canvasu~~ — **v0.4.0**
+- ⬜ Sparametryzować porty `4180`/`5173` w dokumentacji i skryptach
+- ⬜ Rozważyć code splitting Phasera (365 kB gzip, longtask 469 ms)
+- ⬜ Zastosować formatter do całego repo (skonfigurowany, świadomie niewymuszony w CI)
 
 ### 4. Niskie (długi ogon)
 
@@ -210,8 +212,8 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 
 ---
 
-*Stan na 2026-08-31, po wydaniach v0.2.0, v0.2.1, v0.3.0 i v0.4.0. Wszystkie znaleziska
-krytyczne i wysokie są zamknięte poza jednym (`fillMl`/`waterMl` bez górnej klamry).
-Otwarta pozostaje grupa „higiena kodu" — świadoma decyzja, nie przeoczenie.*
+*Stan na 2026-08-31, po wydaniach v0.2.0 – v0.5.0. Wszystkie znaleziska krytyczne i wysokie
+są zamknięte poza jednym (`fillMl`/`waterMl` bez górnej klamry). Z średnich zostały trzy,
+wypisane wyżej.*
 
 *Pliki robocze poszczególnych agentów: `.audit/*.md`. Zrzuty ekranu i dane pomiarowe toru UI/UX: katalog scratch sesji (`shots/`, `*.json`).*

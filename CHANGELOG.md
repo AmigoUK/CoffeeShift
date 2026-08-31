@@ -6,6 +6,39 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 _Nothing yet._
 
+## [0.5.0] — 2026-08-31
+
+Housekeeping release: no change a player will notice, but the conventions in CLAUDE.md are
+now enforced by a tool rather than by memory.
+
+### Added
+- Biome for linting and formatting, with `npm run lint` running in CI ahead of the
+  typecheck. The formatter is configured and available as `npm run format`, but is not
+  enforced: applying it would rewrite 13 files for no behavioural gain.
+- `tests/summary-copy.test.ts`, covering how a score is phrased — the wording assertions
+  that used to sit in the domain tests.
+
+### Changed
+- **BREAKING (internal):** `ScoreReport.summarySentence` is replaced by
+  `ScoreReport.summary`, a `{ opener, clauses }` structure. `grading.ts` imported
+  `../ui/copy` and returned finished English prose, so the scoring rules owned a
+  presentation concern and could not be tested without the UI's vocabulary. The domain now
+  reports what happened; `summarySentence()` in the copy layer turns that into a sentence.
+  The domain no longer imports from `src/ui` at all.
+- All 47 player-facing strings left in `GameScene.ts` — station buttons, toasts, status
+  lines, the score breakdown and the whole guided walkthrough — moved to `copy.ts`, as
+  CLAUDE.md has always required.
+- Recipe values that had been retyped into the scene now come from their source: the dose
+  target and the dose, tamp and time bands from `EXTRACTION`, and the large-jug threshold
+  from the new `SMALL_JUG_MAX_ML` in `recipes.ts`, which also replaces the literal 150
+  repeated twice in grading.
+- The end-to-end specs share `clearSave`/`readSave`/`writeSave` helpers instead of writing
+  the storage key out in four places, where a schema bump would have left them reading a key
+  the game no longer uses.
+
+### Removed
+- Three dead declarations in the playthrough bot, left over from an earlier tuning approach.
+
 ## [0.4.0] — 2026-08-31
 
 ### Added
@@ -164,7 +197,8 @@ _Nothing yet._
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.0...v0.2.1
