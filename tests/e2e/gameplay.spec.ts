@@ -1,23 +1,25 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { activeScene, callHook, hold, holdUntil, hookData, sceneSatisfies, tap, waitForBoot } from './helpers';
+import { BAR_Y, COL_X, FEEDBACK, ROW_Y, TABS_Y } from '../../src/game/layout';
 
-// Button positions in 390x844 game coordinates.
-const DOSE = [65, 712] as const;
-const TAMP = [195, 712] as const;
-const BREW = [325, 712] as const;
-const TAB_MILK = [195, 290] as const;
-const TAB_ASSEMBLY = [325, 290] as const;
-const LARGE_JUG = [195, 655] as const;
-const FILL = [65, 712] as const;
-const PURGE = [195, 712] as const;
-const STEAM = [325, 712] as const;
-const DEMITASSE = [65, 655] as const;
-const LATTE_GLASS = [65, 711] as const;
-const ADD_ESPRESSO = [65, 764] as const;
-const POUR_MILK = [325, 764] as const;
-const SERVE = [320, 812] as const;
-const FEEDBACK_NEXT = [195, 640] as const;
+// Button positions derived from the scene's own layout module, so a layout change moves
+// the tests with it instead of silently making them tap empty canvas.
+const DOSE = [COL_X[0], ROW_Y[1]] as const;
+const TAMP = [COL_X[1], ROW_Y[1]] as const;
+const BREW = [COL_X[2], ROW_Y[1]] as const;
+const TAB_MILK = [COL_X[1], TABS_Y] as const;
+const TAB_ASSEMBLY = [COL_X[2], TABS_Y] as const;
+const LARGE_JUG = [COL_X[1], ROW_Y[0]] as const;
+const FILL = [COL_X[0], ROW_Y[1]] as const;
+const PURGE = [COL_X[1], ROW_Y[1]] as const;
+const STEAM = [COL_X[2], ROW_Y[1]] as const;
+const DEMITASSE = [COL_X[0], ROW_Y[0]] as const;
+const LATTE_GLASS = [COL_X[0], ROW_Y[1]] as const;
+const ADD_ESPRESSO = [COL_X[0], ROW_Y[2]] as const;
+const POUR_MILK = [COL_X[2], ROW_Y[2]] as const;
+const SERVE = [320, BAR_Y] as const;
+const FEEDBACK_NEXT = [FEEDBACK.x, FEEDBACK.y + FEEDBACK.nextOffsetY] as const;
 
 async function startLevel(page: Page, levelId: string): Promise<void> {
   await callHook<unknown>(page, 'startLevel', levelId);

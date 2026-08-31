@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { DrinkOrder, ExtractionPull, FeedbackId, JugId, MilkId, MilkResult, PreparedDrink, ScoreReport, VesselId } from '../domain/types';
 import { EXTRACTION, MILK_TEMP, parFor, recipeFor } from '../domain/recipes';
+import { BAR_Y, BTN, COL_X, CONTROLS_TOP, FEEDBACK, GAME_HEIGHT, GAME_WIDTH, GUIDED_Y, ROW_Y, STATION_STATUS_Y, TAB_PADDING, TABS_Y, TOAST_Y, TOP_PANEL } from './layout';
 import { generateOrders, mulberry32, archetypeForOrderIndex, orderLine } from '../domain/orders';
 import { levelById } from '../domain/levels';
 import type { LevelDef } from '../domain/levels';
@@ -11,6 +12,7 @@ import type { SaveData } from '../domain/save';
 import { sfx } from './audio';
 import { getTimeScale } from './timeScale';
 import { FEEDBACK_LABELS, GAME_COPY, MENU } from '../ui/copy';
+import { announce } from '../ui/live-region';
 export interface LevelCompletePayload {
   levelId: string;
   reports: { order: DrinkOrder; total: number; feedback: FeedbackId[] }[];
@@ -58,6 +60,9 @@ interface AssemblyState extends AssemblySnapshot {
   undoStack: AssemblySnapshot[];
 }
 
+/** Seconds the Bin button stays armed after the first tap. */
+const BIN_ARM_SECONDS = 3;
+
 const GRIND_FACTOR: Record<string, number> = { fine: 1.0, medium: 1.6, coarse: 2.2 };
 const VESSEL_DRINK: Record<string, string> = {
   demitasse: 'espresso', 'americano-mug': 'americano', 'latte-glass': 'latte',
@@ -102,6 +107,8 @@ export class GameScene extends Phaser.Scene {
   private controlsView: Phaser.GameObjects.Container | null = null;
   private toastText: Phaser.GameObjects.Text | null = null;
   private feedbackCard: Phaser.GameObjects.Container | null = null;
+  /** Game-clock deadline for the second tap that actually bins the drink. */
+  private binArmedUntil = 0;
 
   constructor() {
     super('game');
@@ -130,6 +137,7 @@ export class GameScene extends Phaser.Scene {
     // and a stale activeStation makes startDrink's switchStation('espresso') a no-op,
     // leaving the first station blank.
     this.feedbackCard = null;
+    this.binArmedUntil = 0;
     this.activeStation = null;
     this.toastText = null;
     this.controlsBand = null;
@@ -138,14 +146,14 @@ export class GameScene extends Phaser.Scene {
     this.orderStartClock = 0;
     this.wasteEvents = [];
 
-    this.add.rectangle(195, 135, 390, 270, COL.panel).setStrokeStyle(2, COL.dark);
-    this.add.rectangle(195, 730, 390, 224, COL.panel).setStrokeStyle(2, COL.dark);
+    this.add.rectangle(195, TOP_PANEL.height / 2, 390, TOP_PANEL.height, COL.panel).setStrokeStyle(2, COL.dark);
+    this.add.rectangle(195, (CONTROLS_TOP + GAME_HEIGHT) / 2, 390, GAME_HEIGHT - CONTROLS_TOP, COL.panel).setStrokeStyle(2, COL.dark);
     this.buildTicket();
     this.buildStationTabs();
     this.controlsView = this.add.container(0, 0);
     this.buildBottomRow();
-    this.guidedText = this.add.text(195, 618, '', {
-      fontSize: '12px', color: '#2f8f83', align: 'center', wordWrap: { width: 370 }, fontStyle: 'bold',
+    this.guidedText = this.add.text(195, GUIDED_Y, '', {
+      fontSize: '12px', color: '#1d6b61', align: 'center', wordWrap: { width: 370 }, fontStyle: 'bold',
     }).setOrigin(0.5, 0);
     this.startDrink();
     if (level.parallelPrep) {
@@ -174,9 +182,9 @@ export class GameScene extends Phaser.Scene {
 
     this.add.text(340, 135, '', { fontSize: '11px', color: '#7a6a5c' }).setOrigin(0.5).setName('queue-label');
     // Patience is never colour-only: icon + label travel with the bar.
-    this.add.text(15, 246, '\u23F1 Patience', { fontSize: '9px', color: '#7a6a5c' });
-    this.add.rectangle(195, 258, 360, 6, 0xe7dcc9);
-    this.patienceBar = this.add.rectangle(15, 258, 360, 6, COL.teal).setOrigin(0, 0.5).setName('patience-bar');
+    this.add.text(15, TOP_PANEL.patienceLabelY, '\u23F1 Patience', { fontSize: '9px', color: '#7a6a5c' });
+    this.add.rectangle(195, TOP_PANEL.patienceBarY, 360, 6, 0xe7dcc9);
+    this.patienceBar = this.add.rectangle(15, TOP_PANEL.patienceBarY, 360, 6, COL.teal).setOrigin(0, 0.5).setName('patience-bar');
 
     const exit = this.add.text(378, 14, '\u2630 Menu', {
       fontSize: '12px', color: '#fdf6ec', backgroundColor: '#6f4e37', padding: { x: 8, y: 5 },
@@ -192,8 +200,8 @@ export class GameScene extends Phaser.Scene {
       ['espresso', GAME_COPY.stationEspresso], ['milk', GAME_COPY.stationMilk], ['assembly', GAME_COPY.stationAssembly],
     ];
     tabs.forEach(([id, label], i) => {
-      const btn = this.add.text(65 + i * 130, 290, label, {
-        fontSize: '14px', color: '#fdf6ec', backgroundColor: '#6f4e37', padding: { x: 14, y: 10 },
+      const btn = this.add.text(COL_X[i] ?? 65, TABS_Y, label, {
+        fontSize: '14px', color: '#fdf6ec', backgroundColor: '#6f4e37', padding: TAB_PADDING,
       }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setName(`tab-${id}`);
       btn.on('pointerdown', () => this.switchStation(id));
     });
@@ -202,9 +210,11 @@ export class GameScene extends Phaser.Scene {
 
   private buildBottomRow(): void {
     this.controlsBand?.destroy(true);
-    const undo = this.makeButton(60, 812, 150, 48, () => MENU.undo, () => this.undoAssembly());
-    const bin = this.makeButton(195, 812, 90, 48, () => MENU.bin, () => this.binDrink());
-    const serve = this.makeButton(320, 812, 130, 48, () => MENU.serve, () => this.serve(), COL.green);
+    const undo = this.makeButton(60, BAR_Y, 150, BTN.barH, () => MENU.undo, () => this.undoAssembly());
+    const bin = this.makeButton(195, BAR_Y, 90, BTN.barH,
+      () => (this.clockGame <= this.binArmedUntil ? MENU.binConfirm : MENU.bin),
+      () => this.binDrink());
+    const serve = this.makeButton(320, BAR_Y, 130, BTN.barH, () => MENU.serve, () => this.serve(), COL.green);
     this.controlsView?.add([undo, bin, serve]);
   }
   private controlsBand: Phaser.GameObjects.Container | null = null;
@@ -259,8 +269,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private toast(message: string): void {
+    announce(message);
     this.toastText?.destroy();
-    this.toastText = this.add.text(195, 590, message, {
+    this.toastText = this.add.text(195, TOAST_Y, message, {
       fontSize: '13px', color: '#fdf6ec', backgroundColor: '#3b2417', padding: { x: 10, y: 6 }, align: 'center',
       wordWrap: { width: 330 },
     }).setOrigin(0.5).setDepth(60);
@@ -411,7 +422,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showFeedbackCard(report: ScoreReport): void {
-    const card = this.add.container(195, 445).setDepth(50);
+    const card = this.add.container(FEEDBACK.x, FEEDBACK.y).setDepth(50);
+    // A modal that does not swallow input is not modal: taps used to pass straight through
+    // to Bin & restart and silently discard the drink the card was reporting on.
+    const scrim = this.add.rectangle(
+      GAME_WIDTH / 2 - FEEDBACK.x, GAME_HEIGHT / 2 - FEEDBACK.y, GAME_WIDTH, GAME_HEIGHT, COL.dark, 0.45,
+    ).setInteractive();
     const bg = this.add.rectangle(0, 0, 370, 470, 0xffffff).setStrokeStyle(3, COL.coffee);
     const title = this.add.text(0, -200, `${report.total}%`, {
       fontSize: '34px', color: report.total >= 70 ? '#3a7d44' : '#c0392b', fontStyle: 'bold',
@@ -426,8 +442,8 @@ export class GameScene extends Phaser.Scene {
       `Order match ${report.breakdown.orderMatch}/45`, `Recipe ${report.breakdown.recipe}/25`,
       `Technique ${report.breakdown.technique}/15`, `Time ${report.breakdown.time}/10`, `Waste ${report.breakdown.waste}/5`,
     ].join('\n'), { fontSize: '12px', color: '#7a6a5c', align: 'center', lineSpacing: 4 }).setOrigin(0.5);
-    const next = this.makeButton(0, 195, 220, 52, () => 'Next', () => this.dismissFeedbackCard(), COL.teal);
-    card.add([bg, title, ...chipTexts, summaryText, bd, next]);
+    const next = this.makeButton(0, FEEDBACK.nextOffsetY, 220, BTN.h, () => MENU.next, () => this.dismissFeedbackCard(), COL.teal);
+    card.add([scrim, bg, title, ...chipTexts, summaryText, bd, next]);
     this.feedbackCard = card;
   }
 
@@ -478,7 +494,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private statusLine(name: string): void {
-    const text = this.add.text(20, 320, '', { fontSize: '12px', color: '#2d2016', wordWrap: { width: 350 }, lineSpacing: 3 }).setName(name);
+    const text = this.add.text(20, STATION_STATUS_Y, '', { fontSize: '12px', color: '#2d2016', wordWrap: { width: 350 }, lineSpacing: 3 }).setName(name);
     this.stationView?.add(text);
   }
 
@@ -496,12 +512,12 @@ export class GameScene extends Phaser.Scene {
     const grinds: ('fine' | 'medium' | 'coarse')[] = ['fine', 'medium', 'coarse'];
     const labels: Record<'fine' | 'medium' | 'coarse', string> = { fine: GAME_COPY.grindFine, medium: GAME_COPY.grindMedium, coarse: GAME_COPY.grindCoarse };
     grinds.forEach((g, i) => {
-      this.controlsView?.add(this.makeButton(65 + i * 130, 655, 120, 48, () => labels[g], () => { this.ext.grind = g; }, this.ext.grind === g ? COL.teal : COL.coffee));
+      this.controlsView?.add(this.makeButton(COL_X[i] ?? 65, ROW_Y[0], BTN.w, BTN.h, () => labels[g], () => { this.ext.grind = g; }, this.ext.grind === g ? COL.teal : COL.coffee));
     });
-    this.controlsView?.add(this.makeButton(65, 712, 120, 48, () => `Dose +1 g (${this.ext.doseGrams} g)`, () => {
+    this.controlsView?.add(this.makeButton(65, ROW_Y[1], BTN.w, BTN.h, () => `Dose +1 g (${this.ext.doseGrams} g)`, () => {
       if (this.ext.doseGrams < 22) this.ext.doseGrams += 1;
     }));
-    this.controlsView?.add(this.makeHoldButton(195, 712, 120, 48, () => `Tamp ${Math.round(this.ext.tampKg)} kg`, () => { this.ext.tampHeld = true; }, () => {
+    this.controlsView?.add(this.makeHoldButton(195, ROW_Y[1], BTN.w, BTN.h, () => `Tamp ${Math.round(this.ext.tampKg)} kg`, () => { this.ext.tampHeld = true; }, () => {
       if (!this.ext.tampHeld) return;
       this.ext.tampHeld = false;
       this.ext.tampGood = this.ext.tampPeakKg >= EXTRACTION.tampBandKg[0] && this.ext.tampPeakKg <= EXTRACTION.tampBandKg[1];
@@ -509,12 +525,12 @@ export class GameScene extends Phaser.Scene {
       this.ext.tampKg = 0;
       this.ext.tampPeakKg = 0;
     }));
-    this.controlsView?.add(this.makeButton(325, 712, 120, 48, () => (this.ext.brewing ? 'STOP' : 'Brew'), () => {
+    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.ext.brewing ? 'STOP' : 'Brew'), () => {
       if (this.ext.brewing) this.stopPull();
       else if (this.ext.pulls.length < 3) { this.ext.brewing = true; sfx.startExtraction(); }
       else this.toast('Three shots pulled already \u2014 that\u2019s the maximum.');
     }, this.ext.brewing ? COL.red : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, 764, 240, 40, () => 'Empty grinder \u00b7 start over', () => {
+    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => 'Empty grinder \u00b7 start over', () => {
       this.ext = freshExtraction();
     }));
   }
@@ -541,24 +557,24 @@ export class GameScene extends Phaser.Scene {
     this.stationView?.add(this.add.image(290, 445, 'wand').setScale(3));
     this.statusLine('milk-status');
 
-    this.controlsView?.add(this.makeButton(65, 655, 120, 48, () => 'Small jug', () => {
+    this.controlsView?.add(this.makeButton(65, ROW_Y[0], BTN.w, BTN.h, () => 'Small jug', () => {
       this.milk.jug = 'small-jug';
       this.milk.used = true;
       jugSprite.setTexture('jug-small');
     }, this.milk.jug === 'small-jug' ? COL.teal : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, 655, 120, 48, () => 'Large jug', () => {
+    this.controlsView?.add(this.makeButton(195, ROW_Y[0], BTN.w, BTN.h, () => 'Large jug', () => {
       this.milk.jug = 'large-jug';
       this.milk.used = true;
       jugSprite.setTexture('jug-large');
     }, this.milk.jug === 'large-jug' ? COL.teal : COL.coffee));
     const milks = this.level?.milks ?? ['whole'];
-    this.controlsView?.add(this.makeButton(325, 655, 120, 48, () => GAME_COPY[this.milk.type], () => {
+    this.controlsView?.add(this.makeButton(325, ROW_Y[0], BTN.w, BTN.h, () => GAME_COPY[this.milk.type], () => {
       const next = milks[(milks.indexOf(this.milk.type) + 1) % milks.length] ?? 'whole';
       this.milk.type = next;
     }));
-    this.controlsView?.add(this.makeHoldButton(65, 712, 120, 48, () => `Fill ${Math.round(this.milk.fillMl)} ml`, () => { this.milk.filling = true; this.milk.used = true; }, () => { this.milk.filling = false; }));
-    this.controlsView?.add(this.makeButton(195, 712, 120, 48, () => (this.milk.purged ? 'Purged \u2713' : 'Purge wand'), () => { this.milk.purged = true; }, this.milk.purged ? COL.green : COL.coffee));
-    this.controlsView?.add(this.makeButton(325, 712, 120, 48, () => (this.milk.ruined ? 'Empty jug' : this.milk.steaming ? 'Remove jug' : 'Steam'), () => {
+    this.controlsView?.add(this.makeHoldButton(65, ROW_Y[1], BTN.w, BTN.h, () => `Fill ${Math.round(this.milk.fillMl)} ml`, () => { this.milk.filling = true; this.milk.used = true; }, () => { this.milk.filling = false; }));
+    this.controlsView?.add(this.makeButton(195, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.purged ? 'Purged \u2713' : 'Purge wand'), () => { this.milk.purged = true; }, this.milk.purged ? COL.green : COL.coffee));
+    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.ruined ? 'Empty jug' : this.milk.steaming ? 'Remove jug' : 'Steam'), () => {
       if (this.milk.ruined) {
         this.wasteEvents.push('emptied-jug');
         this.milk = freshMilk(this.level ?? ({ milks: ['whole'] } as LevelDef));
@@ -584,7 +600,7 @@ export class GameScene extends Phaser.Scene {
         this.toast('Pick a jug and fill it with milk first.');
       }
     }, this.milk.steaming ? COL.red : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, 764, 240, 40, () => `Wand depth: ${this.milk.wandDepth} (tap to toggle)`, () => {
+    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => `Wand depth: ${this.milk.wandDepth} (tap to toggle)`, () => {
       this.milk.wandDepth = this.milk.wandDepth === 'shallow' ? 'deep' : 'shallow';
       sfx.setSteamDepth(this.milk.wandDepth === 'deep');
     }));
@@ -610,23 +626,23 @@ export class GameScene extends Phaser.Scene {
 
     const vessels: VesselId[] = ['demitasse', 'americano-mug', 'cappuccino-cup', 'latte-glass', 'flat-white-cup', 'takeaway-cup'];
     vessels.forEach((v, i) => {
-      const x = 65 + (i % 3) * 130;
-      const y = 655 + Math.floor(i / 3) * 56;
-      this.controlsView?.add(this.makeButton(x, y, 120, 48, () => v.replaceAll('-', ' '), () => {
+      const x = COL_X[i % 3] ?? 65;
+      const y = ROW_Y[Math.floor(i / 3)] ?? ROW_Y[0];
+      this.controlsView?.add(this.makeButton(x, y, BTN.w, BTN.h, () => v.replaceAll('-', ' '), () => {
         this.pushUndo();
         this.asm.vessel = v;
         this.asm.actions = ['vessel'];
         vesselSprite.setTexture(`vessel-${v}`);
       }, this.asm.vessel === v ? COL.teal : COL.coffee));
     });
-    this.controlsView?.add(this.makeButton(65, 764, 120, 48, () => GAME_COPY.addEspresso, () => this.addShot()));
-    this.controlsView?.add(this.makeHoldButton(195, 764, 120, 48, () => `${GAME_COPY.addWater}${this.asm.waterMl != null ? ` ${Math.round(this.asm.waterMl)}ml` : ''}`, () => { this.asm.pouringWater = true; }, () => {
+    this.controlsView?.add(this.makeButton(65, ROW_Y[2], BTN.w, BTN.h, () => GAME_COPY.addEspresso, () => this.addShot()));
+    this.controlsView?.add(this.makeHoldButton(195, ROW_Y[2], BTN.w, BTN.h, () => `${GAME_COPY.addWater}${this.asm.waterMl != null ? ` ${Math.round(this.asm.waterMl)}ml` : ''}`, () => { this.asm.pouringWater = true; }, () => {
       this.asm.pouringWater = false;
       if (this.asm.waterMl != null && this.asm.waterMl > 0 && !this.asm.actions.includes('water')) {
         this.asm.actions.push('water');
       }
     }));
-    this.controlsView?.add(this.makeHoldButton(325, 764, 120, 48, () => GAME_COPY.pourMilk, () => {
+    this.controlsView?.add(this.makeHoldButton(325, ROW_Y[2], BTN.w, BTN.h, () => GAME_COPY.pourMilk, () => {
       if (!this.milk.used || this.milk.ruined) {
         this.toast('Steam some milk first.');
         return;
@@ -670,12 +686,28 @@ export class GameScene extends Phaser.Scene {
     this.refreshControls();
   }
 
+  /**
+   * Binning throws the drink away, and the button shares the bottom bar with Undo and
+   * Serve — the row a thumb rests on. The first tap only arms it; the second, within
+   * BIN_ARM_SECONDS, actually bins. The assembly is snapshotted first so Undo can bring
+   * it back: resetting asm wholesale used to take the undo stack with it.
+   */
   private binDrink(): void {
+    if (this.clockGame > this.binArmedUntil) {
+      this.binArmedUntil = this.clockGame + BIN_ARM_SECONDS;
+      this.toast(GAME_COPY.binArmed);
+      this.refreshControls();
+      return;
+    }
+    this.binArmedUntil = 0;
+    this.pushUndo();
+    const undoStack = this.asm.undoStack;
     this.wasteEvents.push('binned-drink');
     this.asm = freshAssembly();
+    this.asm.undoStack = undoStack;
     const sprite = this.stationView?.getByName('vessel-sprite') as Phaser.GameObjects.Image | null;
     sprite?.setTexture('vessel-demitasse');
-    this.toast('Drink binned \u2014 starting fresh.');
+    this.toast(GAME_COPY.binned);
     this.refreshControls();
   }
 

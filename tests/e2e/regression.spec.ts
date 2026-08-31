@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { callHook, canvasScale, sceneSatisfies, tap, waitForBoot } from './helpers';
+import { BAR_Y, COL_X, ROW_Y, TABS_Y } from '../../src/game/layout';
 
-// Button positions in 390x844 game coordinates.
-const DOSE = [65, 712] as const;
-const SERVE = [320, 812] as const;
+// Button positions come from the scene's layout module, not from copied numbers.
+const DOSE = [COL_X[0], ROW_Y[1]] as const;
+const SERVE = [320, BAR_Y] as const;
 const EXIT_MENU = [360, 24] as const;
 
 /**
@@ -34,6 +35,46 @@ test.describe('regressions', () => {
     await page.goto('/');
     await waitForBoot(page);
     await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+  });
+
+  test('binning a drink needs a second tap and can be undone', async ({ page }) => {
+    await startLevel(page, 'L1');
+    await tap(page, COL_X[2], TABS_Y);   // assembly station
+    await tap(page, COL_X[0], ROW_Y[0]); // demitasse
+    expect((await sceneSatisfies(page, (s2) => s2.asm.vessel != null)).asm.vessel).toBe('demitasse');
+
+    // First tap only arms the button — a stray thumb must not destroy the drink.
+    await tap(page, 195, BAR_Y);
+    await page.waitForTimeout(200);
+    expect((await sceneSatisfies(page, () => true)).asm.vessel).toBe('demitasse');
+
+    // Second tap actually bins it.
+    await tap(page, 195, BAR_Y);
+    await sceneSatisfies(page, (s2) => s2.asm.vessel == null, 5_000);
+
+    // And Undo brings it back: binning used to wipe the undo stack with the assembly.
+    await tap(page, 60, BAR_Y);
+    const restored = await sceneSatisfies(page, (s2) => s2.asm.vessel != null, 5_000);
+    expect(restored.asm.vessel).toBe('demitasse');
+  });
+
+  test('the feedback card blocks taps on the controls beneath it', async ({ page }) => {
+    await startLevel(page, 'L1');
+    await tap(page, COL_X[2], TABS_Y);   // assembly station
+    await tap(page, COL_X[0], ROW_Y[0]); // demitasse
+    const chosen = await sceneSatisfies(page, (s2) => s2.asm.vessel != null, 10_000);
+    expect(chosen.asm.vessel).toBe('demitasse');
+
+    await tap(page, SERVE[0], SERVE[1]);
+    await sceneSatisfies(page, (s2) => s2.feedbackCard != null, 10_000);
+
+    // Bin & restart sits under the card. A tap there must not reach it.
+    await tap(page, 195, BAR_Y);
+    await page.waitForTimeout(400);
+
+    const after = await sceneSatisfies(page, () => true);
+    expect(after.feedbackCard).not.toBeNull();
+    expect(after.asm.vessel).toBe('demitasse');
   });
 
   test('a hostile mastery key from storage is not rendered as HTML', async ({ page }) => {
@@ -97,12 +138,12 @@ test.describe('regressions', () => {
 
   test('switching station mid-hold does not leave the milk pouring for ever', async ({ page }) => {
     await startLevel(page, 'L3');
-    await tap(page, 195, 290);        // milk station
-    await tap(page, 195, 655);        // large jug
+    await tap(page, COL_X[1], TABS_Y);   // milk station
+    await tap(page, COL_X[1], ROW_Y[0]); // large jug
 
     // Start pouring and let some milk in.
     const { left, top, sx, sy } = await canvasScale(page);
-    await page.mouse.move(left + 65 * sx, top + 712 * sy);
+    await page.mouse.move(left + COL_X[0] * sx, top + ROW_Y[1] * sy);
     await page.mouse.down();
     await sceneSatisfies(page, (s2) => s2.milk.fillMl > 10, 10_000);
 
@@ -284,5 +325,188 @@ test.describe('without JavaScript', () => {
     await page.goto('/');
     const text = await page.locator('noscript').textContent();
     expect(text).toContain('JavaScript');
+  });
+});
+
+test.describe('touch targets on the smallest supported phone', () => {
+  // iPhone SE scales the 390x844 canvas by 667/844 = 0.79, the worst case we support.
+  test.use({ viewport: { width: 375, height: 667 } });
+
+  test('every control clears 44px and no two rows overlap', async ({ page }) => {
+    await page.goto('/');
+    await waitForBoot(page);
+    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+    await startLevel(page, 'L3');
+
+    const controls = await page.evaluate(() => {
+      const w = window as unknown as Record<string, unknown>;
+      const hook = w.__COFFEE_SHIFT as { game: { scene: { getScene: (k: string) => unknown } } };
+      const scene = hook.game.scene.getScene('game') as {
+        controlsView?: { list: { x: number; y: number; list: { type: string; width: number; height: number; text?: string }[] }[] };
+        children: { getByName: (n: string) => { x: number; getBounds: () => { y: number; width: number; height: number } } | null };
+      };
+      const canvas = document.querySelector('#game-canvas canvas') as HTMLCanvasElement;
+      const rect = canvas.getBoundingClientRect();
+      const sx = rect.width / 390;
+      const sy = rect.height / 844;
+      const out: { label: string; w: number; h: number; top: number; bottom: number }[] = [];
+      for (const obj of scene.controlsView?.list ?? []) {
+        const bg = obj.list.find((c) => c.type === 'Rectangle');
+        if (bg == null) continue;
+        const label = obj.list.find((c) => c.type === 'Text')?.text ?? '?';
+        out.push({
+          label, w: bg.width * sx, h: bg.height * sy,
+          top: (obj.y - bg.height / 2) * sy, bottom: (obj.y + bg.height / 2) * sy,
+        });
+      }
+      for (const id of ['espresso', 'milk', 'assembly']) {
+        const tab = scene.children.getByName(`tab-${id}`);
+        if (tab == null) continue;
+        const b = tab.getBounds();
+        out.push({ label: `tab:${id}`, w: b.width * sx, h: b.height * sy, top: b.y * sy, bottom: (b.y + b.height) * sy });
+      }
+      return { controls: out, canvasHeight: rect.height, viewportHeight: window.innerHeight };
+    });
+
+    expect(controls.controls.length).toBeGreaterThan(10);
+
+    const tooSmall = controls.controls.filter((c) => c.w < 44 || c.h < 44);
+    expect(tooSmall.map((c) => `${c.label} ${c.w.toFixed(1)}x${c.h.toFixed(1)}`)).toEqual([]);
+
+    // Rows that overlap let a tap land on the control underneath — the bug that once made
+    // "Wand depth" trigger "Bin & restart".
+    const rows = [...new Set(controls.controls.map((c) => Math.round(c.top)))].sort((a, b) => a - b);
+    const overlaps: string[] = [];
+    for (let i = 1; i < rows.length; i++) {
+      const above = controls.controls.filter((c) => Math.round(c.top) === rows[i - 1]);
+      const below = controls.controls.filter((c) => Math.round(c.top) === rows[i]);
+      const lowestAbove = Math.max(...above.map((c) => c.bottom));
+      const highestBelow = Math.min(...below.map((c) => c.top));
+      if (lowestAbove > highestBelow) overlaps.push(`${rows[i - 1]} -> ${rows[i]}`);
+    }
+    expect(overlaps).toEqual([]);
+  });
+});
+
+test.describe('contrast', () => {
+  test('text in the DOM shell meets WCAG AA', async ({ page }) => {
+    await page.goto('/');
+    await waitForBoot(page);
+
+    const measure = async (): Promise<string[]> => page.evaluate(() => {
+      const parse = (c: string): [number, number, number] => {
+        const m = c.match(/rgba?\(([^)]+)\)/);
+        if (m == null) return [0, 0, 0];
+        const [r, g, b] = (m[1] ?? '').split(',').map((v) => parseFloat(v));
+        return [r ?? 0, g ?? 0, b ?? 0];
+      };
+      const lum = ([r, g, b]: [number, number, number]): number => {
+        const f = (v: number): number => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const bgOf = (el: Element): [number, number, number] => {
+        let node: Element | null = el;
+        while (node != null) {
+          const bg = getComputedStyle(node).backgroundColor;
+          if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return parse(bg);
+          node = node.parentElement;
+        }
+        return [253, 246, 236];
+      };
+      const out: string[] = [];
+      const seen = new Set<string>();
+      for (const el of document.querySelectorAll('#overlay *')) {
+        const text = (el.textContent ?? '').trim();
+        if (text.length === 0 || el.children.length > 0) continue;
+        // Decorative separators carry no information and are aria-hidden, so WCAG's
+        // contrast minimum does not apply to them.
+        if (el.closest('[aria-hidden="true"]') != null) continue;
+        const style = getComputedStyle(el);
+        if (style.visibility === 'hidden' || style.display === 'none') continue;
+        const size = parseFloat(style.fontSize);
+        const bold = parseInt(style.fontWeight, 10) >= 700;
+        const large = size >= 24 || (size >= 18.66 && bold);
+        const need = large ? 3 : 4.5;
+        const la = lum(parse(style.color));
+        const lb = lum(bgOf(el));
+        const ratio = (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+        const key = `${style.color}|${size}`;
+        if (ratio < need && !seen.has(key)) {
+          seen.add(key);
+          out.push(`"${text.slice(0, 24)}" ${style.color} ${size}px -> ${ratio.toFixed(2)}:1 (wymagane ${need})`);
+        }
+      }
+      return out;
+    });
+
+    const failures: string[] = [];
+    failures.push(...await measure());
+    for (const [action, back] of [['mode', true], ['recipe-book', true], ['settings', true]] as const) {
+      await page.click(`[data-action="${action}"]`);
+      await page.waitForTimeout(250);
+      failures.push(...await measure());
+      if (back) {
+        await page.goto('/');
+        await waitForBoot(page);
+      }
+    }
+
+    expect([...new Set(failures)]).toEqual([]);
+  });
+});
+
+test.describe('browser history', () => {
+  test('Back moves between screens instead of leaving the app', async ({ page }) => {
+    await page.goto('/');
+    await waitForBoot(page);
+    await page.click('[data-action="mode"]');
+    await expect(page.locator('[data-screen="mode"]')).toBeVisible();
+    await page.click('[data-mode="learn"]');
+    await expect(page.locator('[data-screen="levels"]')).toBeVisible();
+
+    // On Android this is the hardware Back button. Without history entries it unloads the
+    // page and the player is dumped out of the game.
+    await page.goBack();
+    await expect(page.locator('[data-screen="mode"]')).toBeVisible();
+
+    await page.goBack();
+    await expect(page.locator('[data-screen="menu"]')).toBeVisible();
+    expect(page.url()).not.toContain('about:blank');
+  });
+});
+
+test.describe('accessibility', () => {
+  test('the shell manages focus, labels the canvas and announces game messages', async ({ page }) => {
+    await page.goto('/');
+    await waitForBoot(page);
+
+    // The canvas is opaque to assistive technology, so it must at least identify itself.
+    const canvas = page.locator('#game-canvas canvas');
+    await expect(canvas).toHaveAttribute('role', 'img');
+    expect((await canvas.getAttribute('aria-label')) ?? '').toContain('Coffee Shift');
+
+    // Changing screen must not drop focus back to <body>.
+    await page.click('[data-action="mode"]');
+    await page.waitForTimeout(250);
+    const focused = await page.evaluate(() => ({
+      tag: document.activeElement?.tagName ?? null,
+      cls: document.activeElement?.className ?? null,
+    }));
+    expect(focused.tag).not.toBe('BODY');
+    expect(focused.cls).toContain('screen__title');
+
+    // Toasts are drawn on the canvas, so they are mirrored into a live region.
+    await page.goto('/');
+    await waitForBoot(page);
+    await page.evaluate(() => localStorage.removeItem('coffee-shift.save.v1'));
+    await startLevel(page, 'L1');
+    await tap(page, 195, BAR_Y);   // arms Bin, which toasts
+    await page.waitForTimeout(400);
+    const live = page.locator('#a11y-live');
+    await expect(live).toHaveAttribute('aria-live', 'polite');
+    expect((await live.textContent()) ?? '').toContain('Bin');
   });
 });
