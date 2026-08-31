@@ -6,6 +6,21 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 _Nothing yet._
 
+## [0.5.1] — 2026-08-31
+
+### Fixed
+- Milk and water accumulated with no upper bound while a pour button was held: six seconds
+  on Fill put 541 ml into a jug, and a minute would have reached five litres. That made the
+  status line nonsense and skewed the recipe score, which grades how far the volume sits
+  from the spec. Jug and vessel capacities are now named constants in `recipes.ts`, each set
+  above the largest volume the House Standard asks that vessel to hold, and pouring stops at
+  the brim with a message saying why.
+
+### Added
+- An end-to-end regression covering the phrased score summary, which crosses the seam
+  between the domain's fault data and the copy layer's wording — each side was covered
+  already, the join was not.
+
 ## [0.5.0] — 2026-08-31
 
 Housekeeping release: no change a player will notice, but the conventions in CLAUDE.md are
@@ -197,7 +212,8 @@ now enforced by a tool rather than by memory.
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.1...v0.3.0

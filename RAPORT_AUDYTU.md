@@ -178,7 +178,7 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 - ✅ ~~Zablokować wejście pod kartą oceny; dodać potwierdzenie dla „Bin & restart"~~ — **v0.4.0**. Karta ma warstwę przechwytującą, a binowanie wymaga drugiego tapnięcia i jest odwracalne przez Undo
 - ✅ ~~Naprawić kontrast gwiazdek i dodać obsługę przycisku Wstecz na Androidzie~~ — **v0.4.0**. Gwiazdki 2,21 → 5,16 : 1; nawigacja przez History API
 - ✅ ~~`aria-live`, zarządzanie fokusem i alternatywa tekstowa dla canvasu~~ — **v0.4.0**
-- ⬜ Ograniczyć `fillMl`/`waterMl` górną klamrą
+- ✅ ~~Ograniczyć `fillMl`/`waterMl` górną klamrą~~ — **v0.5.1**. Pojemności dzbanków i naczyń jako stałe w `recipes.ts`
 
 ### 3. Średnie (pierwszy sprint po wdrożeniu)
 
@@ -212,8 +212,7 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 
 ---
 
-*Stan na 2026-08-31, po wydaniach v0.2.0 – v0.5.0. Wszystkie znaleziska krytyczne i wysokie
-są zamknięte poza jednym (`fillMl`/`waterMl` bez górnej klamry). Z średnich zostały trzy,
-wypisane wyżej.*
+*Stan na 2026-08-31, po wydaniach v0.2.0 – v0.5.1. **Wszystkie znaleziska krytyczne i wysokie
+są zamknięte.** Z średnich zostały trzy, wypisane wyżej.*
 
 *Pliki robocze poszczególnych agentów: `.audit/*.md`. Zrzuty ekranu i dane pomiarowe toru UI/UX: katalog scratch sesji (`shots/`, `*.json`).*
