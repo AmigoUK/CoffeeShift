@@ -1,42 +1,64 @@
-# Coffee Shift — stan pracy (sesja 2026-08-30)
+# Coffee Shift — stan pracy (sesja 2026-08-31)
 
-Punkt startowy dla następnej sesji. Repo: **AmigoUK/CoffeeShift** (stare `coffeshift` czeka na ręczne
-usunięcie — token gh nie ma scope `delete_repo`).
+Punkt startowy dla następnej sesji. Repo: **AmigoUK/CoffeeShift**.
 
-## Gotowe i wypchnięte (main = 116676e)
+## Gotowe i wypchnięte
 
-- MVP gry kompletne (v0.1.1): 5 napojów, 3 minigry, Learn/Practise/Shift (20 poziomów), zapisy lokalne, PWA offline.
-- Playwright E2E (10 testów, `npm run test:e2e`) + 58 testów jednostkowych — wszystko zielone.
-- Docker: `docker compose up -d --build` → nginx na porcie **4180** (kontener `coffeeshift-web`,
-  restart unless-stopped — działa i ma działać).
-- Tailscale: `serve` 443 i 8444 → 127.0.0.1:4180 (https://linuxserv1.tailc29352.ts.net/).
-- README + screenshoty + opis repo na GitHubie.
+- **v0.2.0** — MVP + balans z playthrough-bota + cztery naprawy krytyczne z audytu
+  (arkusz stylów, meta viewport, soft-lock sceny, martwe linie statusu). Wdrożone na Dockera.
+- **v0.2.1** — naprawy multi-drink: ticket kotwiczony na bieżącej parze, liczniki klientów
+  bez dzielenia przez 2.
+- **Audyt projektu** — `RAPORT_AUDYTU.md` (8 torów, w tym UI/UX na realnej przeglądarce).
+  Pliki robocze agentów w `.audit/` (ignorowane przez git).
+- Testy: 58 jednostkowych + 15 E2E (`tests/e2e/regression.spec.ts` chroni naprawy z audytu).
+- Docker: `docker compose up -d --build` → nginx na porcie **4180** (kontener `coffeeshift-web`).
+- Tailscale: `serve` 443 i 8444 → 127.0.0.1:4180.
 
-## W locie — CHANGELOG [Unreleased], cel: release v0.2.0
+## SPROSTOWANIE — „S9 multi-drink 41%" NIE było defektem poziomu
 
-Balans z playthrough-bota (`scripts/playthrough.mjs`, dane `/tmp/playthrough-*.json`):
+Poprzedni handoff zapisał S9 jako zepsuty poziom („bot gubi fazę mleka, `milk.fill=0`").
+**To był artefakt narzędzia pomiarowego, nie gry.** Dowód — ten sam bot, ten sam poziom:
 
-- ✅ par-czas liczony z zamówienia, rampa tampera 8 kg/s, zegar gry odporny na stutter,
-  patience floor = par×1.2, foam rate 0.14 (cappuccino osiągalne), order-change 50%/8–15 s,
-  **naprawiona kolizja przycisków stacji z paskiem Undo/Bin/Serve** (tapy „Wand depth" binowały drink),
-  exit-menu w grze, siatka przycisków 655/712/764.
-- ✅ Clean-bot: L1–P5, S1, S4 = 98–100%.
+| skala zegara | wynik | rozegrane | utraceni klienci |
+|---|---|---|---|
+| `SCALE=3` | 68% | 4 z 7 | 3 |
+| `SCALE=1`, przebieg A | **99%, 3 gwiazdki** | 7 z 7 | **0** |
+| `SCALE=1`, przebieg B | 69% | 6 z 7 | 1 |
+| `SCALE=1`, S10 | 88%, 2 gwiazdki | 7 z 7 | 0 |
 
-## Do zrobienia (kolejność)
+Uwaga o wariancji: `generateOrders` losuje zamówienia przez `Math.random()`, więc każdy
+przebieg gra inny zestaw napojów i pojedynczy wynik nie jest miarodajny. Rozstrzygająca
+jest liczba utraconych klientów: przy `SCALE=3` było ich 3 na 7, przy `SCALE=1` — 0 i 1.
+Do wniosków o balansie potrzeba serii przebiegów, nie jednego.
 
-1. **S9 multi-drink (41%)** — bot gubi fazę mleka na ~1 z 5 drinków (sygnatura: `milk.fill=0`);
-   najpierw zinstrumentowany run samego S9.
-2. **S8 po tuningu order-change + S10** (padły na timeout 3500 s — podnieść lub dzielić LEVELS).
-3. **Run sloppy** (średni gracz) — akceptacja: S1–S6 ≥ 70%.
-4. Cel całej tabeli clean ≥ 95% → wtedy **release v0.2.0** (bump, CHANGELOG, tag, gh release).
-5. UI/UX backlog: linie targetu przy nalewaniu, safe-area dolnego rzędu na notch, highlight
-   aktualnego napoju w multi-drink ticket.
-6. Drobiazgi: E2E L3 ma wąskie okno steam (70–75 °C) — jeśli flaknie, poszerzyć próg o 0,5 °C;
-   ikony PWA nie przeszły inspekcji wizualnej (brak modelu vision w harness).
+Mechanizm: bot dokłada ~0,2–0,5 s latencji na każdy odczyt stanu, a `SCALE` mnoży ten narzut
+razem z zegarem gry, aż zjada zapas 12–16 s, który poziom normalnie daje. Klient wygasał
+w trakcie parowania mleka, `loseCustomer()` po 1600 ms wywoływał `startDrink()` z `freshMilk()`,
+a bot — którego `waitState(!steaming)` świeże mleko spełnia natychmiast — odczytywał wyzerowany
+stan i serwował pusty kubek następnemu klientowi. Stąd `milk.fill=0` i `WRONG_SHOT_COUNT`.
+
+**Wniosek dla przyszłych sesji: wyniki bota przy `SCALE>1` nie nadają się do oceny balansu
+poziomów z cierpliwością klienta.** Do strojenia używać `SCALE=1`, albo najpierw usunąć
+narzut latencji z pomiaru.
+
+## Do zrobienia (kolejność, wg RAPORT_AUDYTU.md)
+
+1. **`base` w `vite.config.ts`** — jedyne otwarte znalezisko krytyczne. Bez niego wdrożenie
+   pod podścieżką zrywa assety, service worker i manifest naraz.
+2. **nginx** — nagłówki bezpieczeństwa (CSP, `frame-ancestors`, `nosniff`), `Cache-Control`
+   dla `index.html`, typ MIME dla `manifest.webmanifest`.
+3. **Ergonomia dotykowa** — 18 z 18 celów poniżej 44 px na iPhone SE; priorytet: „☰ Menu"
+   (jedyne wyjście z poziomu) i zakładki stacji. Zerowy odstęp między rzędem y=764 a paskiem
+   Undo/Bin/Serve.
+4. **Zawieszone flagi trzymanych przycisków** — `switchStation()` nie czyści `tampHeld`,
+   `filling`, `pouringWater`; brak `pointerupoutside`/`pointercancel`.
+5. **Przestarzała kopia zapisu w `screens.ts:25`** — kasuje postęp z bieżącej sesji.
+6. **Linter + CI** — przyczyna źródłowa długu konwencyjnego: ~48 literałów UI poza `copy.ts`,
+   `domain/grading.ts` importujący `../ui/copy`, recepty zduplikowane w kodzie sceny.
 
 ## Środowisko
 
-- Dev: `npm run dev` (5173, wygaszone na noc), testy: `npm test` / `npm run test:e2e`.
-- Gra na żywo: Docker 4180 + tailscale serve (443/8444). ERR_SSL_PROTOCOL_ERROR u klienta =
-  DNS omija MagicDNS (Private Relay / DoH) → patrz notatka w historii sesji; opcja `tailscale funnel 443 on`
-  czeka na decyzję właściciela.
+- Dev: `npm run dev` (5173). Testy: `npm test`, `npm run test:e2e`.
+- Bot: `LEVELS=S9 SCALE=1 node scripts/playthrough.mjs clean` (patrz sprostowanie wyżej).
+- Gra na żywo: Docker 4180 + tailscale serve. Service worker wymaga HTTPS —
+  bez TLS przed aplikacją PWA nie działa offline i nie zgłasza tego w UI.
