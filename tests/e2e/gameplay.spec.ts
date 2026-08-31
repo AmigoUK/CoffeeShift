@@ -22,8 +22,9 @@ const SERVE = [320, BAR_Y] as const;
 const FEEDBACK_NEXT = [FEEDBACK.x, FEEDBACK.y + FEEDBACK.nextOffsetY] as const;
 
 async function startLevel(page: Page, levelId: string): Promise<void> {
+  // The first call also loads the Phaser chunk, which a cold dev server compiles on demand.
   await callHook<unknown>(page, 'startLevel', levelId);
-  await sceneSatisfies(page, (s) => s.level?.id === levelId, 15_000);
+  await sceneSatisfies(page, (s) => s.level?.id === levelId, 40_000);
   await page.waitForTimeout(400);
 }
 

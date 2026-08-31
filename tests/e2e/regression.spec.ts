@@ -26,8 +26,9 @@ async function stationText(page: Page, name: string): Promise<string> {
 }
 
 async function startLevel(page: Page, levelId: string): Promise<void> {
+  // The first call also loads the Phaser chunk, which a cold dev server compiles on demand.
   await callHook<unknown>(page, 'startLevel', levelId);
-  await sceneSatisfies(page, (s) => s.level?.id === levelId, 15_000);
+  await sceneSatisfies(page, (s) => s.level?.id === levelId, 40_000);
   await page.waitForTimeout(400);
 }
 
@@ -145,6 +146,8 @@ test.describe('regressions', () => {
       errorTagCounts: {},
       stats: { drinksServed: 0, perfectOrders: 0, shiftsPlayed: 0 },
     });
+    // Phaser is loaded on demand, so the game must exist before its events can be emitted.
+    await startLevel(page, 'L1');
     await page.evaluate(() => {
       const w = window as unknown as Record<string, unknown>;
       const hook = w.__COFFEE_SHIFT as { game: { events: { emit: (n: string, p: unknown) => void } } };
@@ -510,11 +513,6 @@ test.describe('accessibility', () => {
     await page.goto('/');
     await waitForBoot(page);
 
-    // The canvas is opaque to assistive technology, so it must at least identify itself.
-    const canvas = page.locator('#game-canvas canvas');
-    await expect(canvas).toHaveAttribute('role', 'img');
-    expect((await canvas.getAttribute('aria-label')) ?? '').toContain('Coffee Shift');
-
     // Changing screen must not drop focus back to <body>.
     await page.click('[data-action="mode"]');
     await page.waitForTimeout(250);
@@ -530,6 +528,13 @@ test.describe('accessibility', () => {
     await waitForBoot(page);
     await clearSave(page);
     await startLevel(page, 'L1');
+
+    // The canvas exists once the game has loaded; it is opaque to assistive technology, so
+    // it must at least identify itself.
+    const canvas = page.locator('#game-canvas canvas');
+    await expect(canvas).toHaveAttribute('role', 'img');
+    expect((await canvas.getAttribute('aria-label')) ?? '').toContain('Coffee Shift');
+
     await tap(page, 195, BAR_Y);   // arms Bin, which toasts
     await page.waitForTimeout(400);
     const live = page.locator('#a11y-live');
