@@ -4,27 +4,52 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 ## [Unreleased]
 
-### Changed
-- Par times are now derived from each order's work (shots \u00d7 27 s + milk + water + takeaway + slack) instead of a flat per-drink table; multi-shot drinks were mathematically unable to finish inside the old pars, capping time scores and blocking 3 stars.
-- Tamp ramp slowed from 14 to 8 kg/s: the 15\u201320 kg release window is now 0.625 s instead of 0.36 s, making it releasable on touch.
-- All in-game timers (patience, elapsed time scoring, order changes) run on a capped-delta game clock, so frame drops and main-thread stalls on weak hardware no longer eat customer patience or tank grades.
-- Haptic buzz when the tamp releases inside the band.
+_Nothing yet._
 
+## [0.2.0] — 2026-08-31
 
 ### Fixed
+- `src/style.css` never reached the bundle: the `import './style.css'` in `src/main.ts` was
+  dropped in `da915e0`, so the whole DOM shell rendered unstyled — Play measured ~42×21 px and
+  sat below the fold on every viewport. Restored, and now covered by an end-to-end assertion.
+- `index.html` had no `<meta name="viewport">`, so phones laid the page out at 980 px and the
+  `env(safe-area-inset-*)` rules in `src/style.css` always resolved to 0. Added with
+  `viewport-fit=cover`; page zoom is deliberately left enabled (WCAG 1.4.4).
+- Leaving a level through ☰ Menu with the feedback card open soft-locked every later level:
+  Phaser reuses the scene instance, so `feedbackCard` still pointed at a destroyed container and
+  both `update()` and `serve()` returned early forever. `create()` now resets the per-run state.
+- Every station status line was dead code. The text objects live in the `stationView` container,
+  but were looked up with `this.children.getByName()` on the scene display list, which
+  `Container.add()` had already removed them from — so each lookup returned null. The same bug
+  silenced the espresso brew streams and the vessel sprite.
 - Station control rows overlapped the persistent Undo/Bin/Serve bar: taps on Wand depth or
   Empty grinder hit Bin & restart (silently wasting the drink), and row-3 actions grazed Serve.
   All stations re-laid out on a non-overlapping grid (rows 655/712/764, bottom bar 788-836).
 
-### Changed (balance, from the playthrough bot)
+### Changed
+- Par times are now derived from each order's work (shots × 27 s + milk + water + takeaway + slack)
+  instead of a flat per-drink table; multi-shot drinks were mathematically unable to finish inside
+  the old pars, capping time scores and blocking 3 stars.
+- Tamp ramp slowed from 14 to 8 kg/s: the 15–20 kg release window is now 0.625 s instead of 0.36 s,
+  making it releasable on touch.
+- All in-game timers (patience, elapsed time scoring, order changes) run on a capped-delta game
+  clock, so frame drops and main-thread stalls on weak hardware no longer eat customer patience
+  or tank grades.
+- Haptic buzz when the tamp releases inside the band.
 - Patience floor: customers now wait at least par × 1.2 — S6-style 3-shot orders exceeded flat
   level patience on brewing time alone and were unwinnable.
 - Order changes (S8+) fire on ~half of eligible orders, once, between 8-15 s — previously every
   order changed at a fixed 5 s, forcing a full redo of every drink.
 - Milk foam rate 0.09 → 0.14 cm/s: cappuccino's 2.0 cm foam needed 22 s of steaming, which
   scorched the milk; depth-switching (shallow → deep) is now the taught technique per drink.
+
+### Added
 - Docker deployment: multi-stage build (node:22-alpine → nginx:alpine) with SPA fallback,
   immutable asset caching and no-cache service worker; `docker compose up -d` serves port 4180.
+- `tests/e2e/regression.spec.ts` — three end-to-end regressions covering the shell stylesheet and
+  viewport meta, the station status lines, and the feedback-card soft-lock.
+- `RAPORT_AUDYTU.md` — consolidated report from an eight-track project audit, including a
+  browser-driven UI/UX pass over five viewports.
 
 ## [0.1.1] — 2026-08-29
 
@@ -56,8 +81,8 @@ All notable changes to **Coffee Shift** are documented in this file.
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.0...v0.1.1
-
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.1...HEAD
 [0.1.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/AmigoUK/CoffeeShift/releases/tag/v0.0.1
