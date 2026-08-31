@@ -174,9 +174,10 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 - ✅ ~~nginx: nagłówki bezpieczeństwa, `Cache-Control` dla `index.html`, typ MIME manifestu~~ — **v0.2.1** i **v0.3.0**
 - ✅ ~~Sanityzować klucze `mastery` przed renderowaniem do `innerHTML`~~ — **v0.3.0**
 - ✅ ~~Dodać `engines`, `.nvmrc` i pipeline CI~~ — **v0.3.0**
-- ⬜ Podnieść cele dotykowe do minimum 44 × 44 px, ze szczególnym priorytetem dla „☰ Menu" (jedyne wyjście z poziomu) i zakładek stacji; wprowadzić odstęp między rzędem y=764 a paskiem dolnym
-- ⬜ Zablokować wejście pod kartą oceny; dodać potwierdzenie dla „Bin & restart"
-- ⬜ Naprawić kontrast gwiazdek (2,21 : 1) i dodać obsługę przycisku Wstecz na Androidzie
+- ✅ ~~Podnieść cele dotykowe do minimum 44 × 44 px~~ — **v0.4.0**. Zmierzone: 0 z 13 poniżej normy na iPhone SE, iPhone 14 Pro i Pixelu 7 (było 13 z 13 na SE). Układ wyliczany w `src/game/layout.ts` w górę od paska dolnego, więc rzędy nie mogą na siebie nachodzić ani zjeść marginesu na home indicator
+- ✅ ~~Zablokować wejście pod kartą oceny; dodać potwierdzenie dla „Bin & restart"~~ — **v0.4.0**. Karta ma warstwę przechwytującą, a binowanie wymaga drugiego tapnięcia i jest odwracalne przez Undo
+- ✅ ~~Naprawić kontrast gwiazdek i dodać obsługę przycisku Wstecz na Androidzie~~ — **v0.4.0**. Gwiazdki 2,21 → 5,16 : 1; nawigacja przez History API
+- ✅ ~~`aria-live`, zarządzanie fokusem i alternatywa tekstowa dla canvasu~~ — **v0.4.0**
 - ⬜ Ograniczyć `fillMl`/`waterMl` górną klamrą
 
 ### 3. Średnie (pierwszy sprint po wdrożeniu)
@@ -209,7 +210,8 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 
 ---
 
-*Stan na 2026-08-31, po wydaniach v0.2.0, v0.2.1 i v0.3.0. Otwarte pozostają grupy „dotyk
-i dostępność" oraz „higiena kodu" — świadoma decyzja, nie przeoczenie.*
+*Stan na 2026-08-31, po wydaniach v0.2.0, v0.2.1, v0.3.0 i v0.4.0. Wszystkie znaleziska
+krytyczne i wysokie są zamknięte poza jednym (`fillMl`/`waterMl` bez górnej klamry).
+Otwarta pozostaje grupa „higiena kodu" — świadoma decyzja, nie przeoczenie.*
 
 *Pliki robocze poszczególnych agentów: `.audit/*.md`. Zrzuty ekranu i dane pomiarowe toru UI/UX: katalog scratch sesji (`shots/`, `*.json`).*

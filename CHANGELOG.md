@@ -6,6 +6,35 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 _Nothing yet._
 
+## [0.4.0] — 2026-08-31
+
+### Added
+- `src/game/layout.ts`: the play screen's geometry, derived rather than typed out. Rows are
+  computed upwards from the bottom bar, so no edit can overlap two rows or eat the gap left
+  for the home indicator. The tests and the playthrough bot read the same numbers, instead
+  of keeping their own copies that silently rot.
+- A live region plus focus management: changing screen now moves focus to the heading rather
+  than dropping it on `<body>`, the canvas identifies itself to assistive technology, and
+  in-game toasts — drawn on a canvas that announces nothing — are mirrored for screen readers.
+- History entries for every screen, so Android's hardware Back moves between screens instead
+  of unloading the page and throwing the player out of the game.
+
+### Fixed
+- Touch targets: 13 of 13 controls were under the 44 px minimum on an iPhone SE, which scales
+  the canvas by 0.79. All controls are now 56 game units tall, measured at 0 of 13 under the
+  minimum across iPhone SE, iPhone 14 Pro and Pixel 7. Station tabs needed 57 — at 55 they
+  landed on 43.5 px and just missed.
+- The bottom row no longer touches the persistent Undo/Bin/Serve bar, and the bar clears the
+  home indicator.
+- The feedback card was not modal: taps passed through to Bin & restart and silently
+  discarded the drink the card was reporting on.
+- Bin & restart destroyed a drink on a single tap of a button sitting in the bottom row, and
+  reset the assembly wholesale — taking the undo stack with it. It now arms on the first tap
+  and stays undoable.
+- Contrast: stars 2.21 → 5.16 : 1, the guided hint 3.64 → 5.88 : 1, and the footer now reuses
+  the muted token that already clears AA. Checked by a test that measures computed styles
+  across every DOM screen.
+
 ## [0.3.0] — 2026-08-31
 
 ### Added
@@ -135,7 +164,8 @@ _Nothing yet._
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.1...v0.2.0
