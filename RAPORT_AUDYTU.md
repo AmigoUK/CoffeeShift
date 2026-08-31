@@ -161,20 +161,23 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 - ✅ ~~Dodać `<meta name="viewport">` do `index.html`~~ — **zrobione i zweryfikowane**
 - ✅ ~~Zresetować stan sceny w `GameScene.create()` (soft-lock)~~ — **zrobione i zweryfikowane**
 - ✅ ~~Przepiąć wyszukiwanie obiektów stacji na `stationView.getByName()`~~ — **zrobione i zweryfikowane**
-- ⬜ **Scommitować i wdrożyć powyższe** — produkcja na :4180 nadal serwuje build z defektami
-- ⬜ Ustawić `base` w `vite.config.ts` na wartość konfigurowalną
+- ✅ ~~Scommitować i wdrożyć powyższe~~ — **v0.2.0**, wdrożone
+- ✅ ~~Ustawić `base` w `vite.config.ts` na wartość konfigurowalną~~ — **v0.3.0**. Zweryfikowane buildem pod podścieżką: assety, scope service workera i `start_url` manifestu przestawiają się razem
+
+**Wszystkie znaleziska krytyczne są zamknięte.**
 
 ### 2. Wysokie (przed wdrożeniem)
 
-- Wyczyścić flagi `tampHeld`/`filling`/`pouringWater` w `switchStation()`; dodać `pointerupoutside` i `pointercancel`; ograniczyć `fillMl`/`waterMl` górną klamrą
-- Naprawić ticket multi-drink (`GameScene.ts:322-336`) i przeprowadzić instrumentowany run S9 — to odblokowuje ścieżkę do release'u v0.2.0
-- Usunąć przestarzałą modułową kopię zapisu w `screens.ts:25` (kasuje postęp z sesji)
-- nginx: nagłówki bezpieczeństwa, `Cache-Control` dla `index.html`, typ MIME manifestu
-- Podnieść cele dotykowe do minimum 44 × 44 px, ze szczególnym priorytetem dla „☰ Menu" (jedyne wyjście z poziomu) i zakładek stacji; wprowadzić odstęp między rzędem y=764 a paskiem dolnym
-- Zablokować wejście pod kartą oceny; dodać potwierdzenie dla „Bin & restart"
-- Naprawić kontrast gwiazdek (2,21 : 1) i dodać obsługę przycisku Wstecz na Androidzie
-- Sanityzować klucze `mastery` przed renderowaniem do `innerHTML`
-- Dodać `engines`, `.nvmrc` i pipeline CI (`tsc` + `vitest` + `playwright`)
+- ✅ ~~Wyczyścić flagi `tampHeld`/`filling`/`pouringWater` w `switchStation()`; dodać `pointerupoutside` i `pointercancel`~~ — **v0.3.0**
+- ✅ ~~Naprawić ticket multi-drink~~ — **v0.2.1**. Instrumentowany przebieg S9 wykazał, że wynik „41%" był artefaktem pomiaru, nie defektem poziomu (patrz `docs/STATUS.md`)
+- ✅ ~~Usunąć przestarzałą modułową kopię zapisu w `screens.ts`~~ — **v0.3.0**
+- ✅ ~~nginx: nagłówki bezpieczeństwa, `Cache-Control` dla `index.html`, typ MIME manifestu~~ — **v0.2.1** i **v0.3.0**
+- ✅ ~~Sanityzować klucze `mastery` przed renderowaniem do `innerHTML`~~ — **v0.3.0**
+- ✅ ~~Dodać `engines`, `.nvmrc` i pipeline CI~~ — **v0.3.0**
+- ⬜ Podnieść cele dotykowe do minimum 44 × 44 px, ze szczególnym priorytetem dla „☰ Menu" (jedyne wyjście z poziomu) i zakładek stacji; wprowadzić odstęp między rzędem y=764 a paskiem dolnym
+- ⬜ Zablokować wejście pod kartą oceny; dodać potwierdzenie dla „Bin & restart"
+- ⬜ Naprawić kontrast gwiazdek (2,21 : 1) i dodać obsługę przycisku Wstecz na Androidzie
+- ⬜ Ograniczyć `fillMl`/`waterMl` górną klamrą
 
 ### 3. Średnie (pierwszy sprint po wdrożeniu)
 
@@ -205,5 +208,8 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 - **Rozkład wg dziedzin:** Linki: 85/100 · Błędy: 58/100 · Hard-coded: 75/100 · Martwy kod: 88/100 · Platforma: 48/100 · Bezpieczeństwo: 72/100 · Jakość: 55/100 · UI/UX: 42/100
 
 ---
+
+*Stan na 2026-08-31, po wydaniach v0.2.0, v0.2.1 i v0.3.0. Otwarte pozostają grupy „dotyk
+i dostępność" oraz „higiena kodu" — świadoma decyzja, nie przeoczenie.*
 
 *Pliki robocze poszczególnych agentów: `.audit/*.md`. Zrzuty ekranu i dane pomiarowe toru UI/UX: katalog scratch sesji (`shots/`, `*.json`).*

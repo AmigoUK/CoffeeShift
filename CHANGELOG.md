@@ -6,6 +6,36 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 _Nothing yet._
 
+## [0.3.0] — 2026-08-31
+
+### Added
+- `VITE_BASE` build variable, so the game can be deployed under a sub-path. It rewrites asset
+  URLs, the service worker registration scope and the manifest's `start_url`/`scope` together
+  — previously all three assumed a domain root and a sub-path deploy broke every one of them.
+- Security headers on every response: Content-Security-Policy, X-Content-Type-Options,
+  X-Frame-Options, Referrer-Policy and Permissions-Policy, plus `server_tokens off`. They are
+  included per location, because nginx discards inherited `add_header` in any block that
+  defines its own.
+- GitHub Actions CI running typecheck, unit tests and the Playwright suite, with `engines` and
+  `.nvmrc` pinning Node 22 — `vite.config.ts` uses an import attribute that older Node rejects.
+- A `<noscript>` message and a guard around Phaser start-up, so a browser without WebGL or
+  Canvas2D gets an explanation instead of a blank page.
+
+### Fixed
+- Holding a control while the station was torn down left the flag set for ever: `update()`
+  kept acting on it regardless of the visible station, so the jug filled without end. Hold
+  buttons now also handle `pointerupoutside` and `pointercancel`.
+- Toggling a setting wrote back a save cached when the module loaded, rolling back every
+  mastery, stat and unlock recorded since. The shell also showed stale progress after leaving
+  a level; both now re-read the stored save.
+- The level summary rendered mastery keys, feedback tags and habit hints straight into
+  `innerHTML`, and all three come from `localStorage` — a planted key injected a live element.
+  Stored values are now escaped.
+- The PWA manifest was served as `application/octet-stream`, so Firefox refused it.
+
+### Changed
+- `VITE_PREVIEW_HOST` replaces the tailnet hostname that was hard-coded in `vite.config.ts`.
+
 ## [0.2.1] — 2026-08-31
 
 ### Fixed
@@ -105,7 +135,8 @@ _Nothing yet._
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.1.0...v0.1.1
