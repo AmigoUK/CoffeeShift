@@ -1,7 +1,6 @@
-import type { DrinkOrder, FeedbackId, PreparedDrink, ScoreReport, SizeId } from './types';
-import { MILK_TEMP, EXTRACTION, parFor } from './recipes';
+import type { DrinkOrder, FeedbackId, PreparedDrink, ScoreReport, ScoreSummary, SizeId, SummaryOpenerId } from './types';
+import { MILK_TEMP, EXTRACTION, SMALL_JUG_MAX_ML, parFor } from './recipes';
 import type { Recipe } from './recipes';
-import { FEEDBACK_HINTS, SUMMARY_CLAUSES, SUMMARY_OPENERS } from '../ui/copy';
 
 interface Check { earned: number; possible: number; applicable: boolean }
 
@@ -70,14 +69,6 @@ function wasteScore(prepared: PreparedDrink): number {
   return Math.max(0, 5 - penalty);
 }
 
-function joinClauses(clauses: string[]): string {
-  const capped = clauses.map((c, i) => (i === 0 ? c.charAt(0).toUpperCase() + c.slice(1) : c));
-  if (capped.length === 0) return '';
-  if (capped.length === 1) return `${capped[0]}.`;
-  if (capped.length === 2) return `${capped[0]} and ${capped[1]}.`;
-  return `${capped.slice(0, -1).join(', ')}, and ${capped[capped.length - 1]}.`;
-}
-
 /**
  * Grade a prepared drink against the ordered drink using the House Standard.
  * Category weights: orderMatch 45 / recipe 25 / technique 15 / time 10 / waste 5.
@@ -127,7 +118,8 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
   const assemblyOk = JSON.stringify(prepared.assemblyActions) === JSON.stringify(drink.assembly);
   const jugVolume = prepared.milk?.volumeMl ?? null;
   const jugOk = milkUsed && jugVolume != null && prepared.milk?.jug != null
-    && ((jugVolume <= 150 && prepared.milk.jug === 'small-jug') || (jugVolume > 150 && prepared.milk.jug === 'large-jug'));
+    && ((jugVolume <= SMALL_JUG_MAX_ML && prepared.milk.jug === 'small-jug')
+      || (jugVolume > SMALL_JUG_MAX_ML && prepared.milk.jug === 'large-jug'));
 
   const recipeScore = allocate(25, [
     chk(foamOk ? 10 : 0, 10, Boolean(milkUsed && drink.foamOkCm != null)),
@@ -183,7 +175,7 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
   if (purgeApplicable && prepared.milk?.wandPurged !== true) add('STEAM_WAND_NOT_PURGED');
   if (inferredSize !== null && inferredSize !== order.size) add('WRONG_SIZE');
   if (!shotsOk) add('WRONG_SHOT_COUNT');
-  if (prepared.milk?.jug === 'large-jug' && jugVolume != null && jugVolume <= 150) add('JUG_TOO_LARGE');
+  if (prepared.milk?.jug === 'large-jug' && jugVolume != null && jugVolume <= SMALL_JUG_MAX_ML) add('JUG_TOO_LARGE');
 
   const faults = [...feedback];
   const correctDrink = drinkOk && sizeOk && shotsOk && milkOk && vesselOk;
@@ -192,27 +184,16 @@ export function grade(order: DrinkOrder, prepared: PreparedDrink, drink: Recipe)
   else if (correctDrink) finalFeedback.push('CORRECT_DRINK');
   finalFeedback.push(...faults);
 
-  // ---- summary sentence ----
-  const opener = faults.length === 0 && total >= 98
-    ? SUMMARY_OPENERS.perfect
-    : correctDrink
-      ? SUMMARY_OPENERS.correctRecipe
-      : SUMMARY_OPENERS.wrongDrink;
-  const clauses = faults
-    .map((f) => SUMMARY_CLAUSES[f]?.replace('{drink}', drink.name.toLowerCase()) ?? '')
-    .filter((c) => c.length > 0);
-  const hint = faults.map((f) => FEEDBACK_HINTS[f]).find((h) => h != null) ?? null;
-  const faultSentence = joinClauses(clauses);
-  const summarySentence = faultSentence.length === 0
-    ? opener
-    : hint == null
-      ? `${opener} ${faultSentence}`
-      : `${opener} ${faultSentence} ${hint}`;
+  // ---- summary, as data for the UI to phrase ----
+  const opener: SummaryOpenerId = faults.length === 0 && total >= 98
+    ? 'perfect'
+    : correctDrink ? 'correctRecipe' : 'wrongDrink';
+  const summary: ScoreSummary = { opener, clauses: faults };
 
   return {
     total,
     breakdown: { orderMatch, recipe: recipeScore, technique, time, waste },
     feedback: finalFeedback,
-    summarySentence,
+    summary,
   };
 }

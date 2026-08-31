@@ -29,11 +29,24 @@ export type FeedbackId =
   | 'DOSE_LOW' | 'DOSE_HIGH' | 'WRONG_SIZE' | 'WRONG_SHOT_COUNT' | 'UNEVEN_TAMP' | 'MISSING_STEP'
   | 'JUG_TOO_LARGE';
 
+export type SummaryOpenerId = 'perfect' | 'correctRecipe' | 'wrongDrink';
+
+/**
+ * What the summary should say, as data. Turning this into a sentence is the UI's job —
+ * the domain used to import ../ui/copy and hand back finished English prose, which put a
+ * presentation concern inside the scoring rules.
+ */
+export interface ScoreSummary {
+  opener: SummaryOpenerId;
+  /** Faults worth mentioning, in the order they should be read out. */
+  clauses: FeedbackId[];
+}
+
 export interface ScoreReport {
   total: number; // 0–100
   breakdown: { orderMatch: number; recipe: number; technique: number; time: number; waste: number }; // max 45/25/15/10/5
   feedback: FeedbackId[];
-  summarySentence: string;   // e.g. "Correct recipe. The milk was overheated and the foam was too thick for a latte."
+  summary: ScoreSummary;
 }
 
 export type ModeId = 'learn' | 'practice' | 'shift';

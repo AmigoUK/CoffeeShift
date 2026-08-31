@@ -38,6 +38,9 @@ export const EXTRACTION = {
   timeBandSeconds: [24, 31] as [number, number],
 };
 
+/** Above this the House Standard calls for the large jug; at or below it, the small one. */
+export const SMALL_JUG_MAX_ML = 150;
+
 export const MODIFIER_LIMITS = { maxShots: 3, extraShotStep: 1 };
 export const TAKEAWAY_EXTRA_SECONDS = 5;
 

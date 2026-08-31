@@ -67,7 +67,7 @@ describe('grading — perfect runs', () => {
       const report = run(order, prepared);
       expect(report.feedback).toEqual(['PERFECT_ORDER']);
       expect(report.total).toBeGreaterThanOrEqual(98);
-      expect(report.summarySentence).toBe('Perfect!');
+      expect(report.summary.opener).toBe('perfect');
     });
   }
 
@@ -195,17 +195,17 @@ describe('grading — waste floor and re-weighting', () => {
 });
 
 describe('grading — summary sentences', () => {
-  it('composes clauses with the drink name and a hint', () => {
+  it('reports the faults it found, in order, for the UI to phrase', () => {
     const report = run(makeOrder(), makePrepared({
       milk: { typeUsed: 'whole', tempC: 72, foamCm: 1.8, wandPurged: true, jug: 'large-jug', volumeMl: 300 },
     }));
-    expect(report.summarySentence).toBe(
-      'Correct recipe. The milk was overheated and the foam was too thick for a latte. Practise milk temperature control.',
-    );
+    expect(report.summary.opener).toBe('correctRecipe');
+    expect(report.summary.clauses).toContain('MILK_TOO_HOT');
+    expect(report.summary.clauses).toContain('FOAM_TOO_THICK');
   });
 
-  it('wrong drink opens with the wrong-drink opener', () => {
+  it('wrong drink uses the wrong-drink opener', () => {
     const report = run(makeOrder(), makePrepared({ drink: 'espresso', vessel: 'demitasse', milk: null }));
-    expect(report.summarySentence.startsWith('Not quite the drink ordered.')).toBe(true);
+    expect(report.summary.opener).toBe('wrongDrink');
   });
 });

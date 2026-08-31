@@ -40,7 +40,7 @@ describe('mastery EMA', () => {
       total: 100,
       breakdown: { orderMatch: 45, recipe: 25, technique: 15, time: 10, waste: 5 },
       feedback: ['PERFECT_ORDER'],
-      summarySentence: 'Perfect!',
+      summary: { opener: 'perfect' as const, clauses: [] },
     };
     recordResult(save, order, report);
     expect(save.mastery['drink:latte']).toBe(100);

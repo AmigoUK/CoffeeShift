@@ -11,7 +11,7 @@ import { loadSave, writeSave } from '../domain/save';
 import type { SaveData } from '../domain/save';
 import { sfx } from './audio';
 import { getTimeScale } from './timeScale';
-import { FEEDBACK_LABELS, GAME_COPY, MENU } from '../ui/copy';
+import { BREAKDOWN_COPY, FEEDBACK_LABELS, GAME_COPY, GUIDED_COPY, MENU, STATION_COPY, STATUS_COPY, TOAST_COPY, summarySentence } from '../ui/copy';
 import { announce } from '../ui/live-region';
 export interface LevelCompletePayload {
   levelId: string;
@@ -59,6 +59,9 @@ interface AssemblyState extends AssemblySnapshot {
   pouringWater: boolean;
   undoStack: AssemblySnapshot[];
 }
+
+/** Below this the guidance still says "start steaming" rather than "watch the gauge". */
+const STEAM_HINT_TEMP_C = 50;
 
 /** Seconds the Bin button stays armed after the first tap. */
 const BIN_ARM_SECONDS = 3;
@@ -435,12 +438,15 @@ export class GameScene extends Phaser.Scene {
     const chipTexts = report.feedback.slice(0, 6).map((tag, i) => this.add.text(0, -150 + i * 25, `\u25CF ${FEEDBACK_LABELS[tag]}`, {
       fontSize: '13px', color: tag === 'PERFECT_ORDER' || tag === 'CORRECT_DRINK' ? '#3a7d44' : '#c0392b',
     }).setOrigin(0.5));
-    const summaryText = this.add.text(0, 20, report.summarySentence, {
+    const order = this.currentDrink();
+    const drinkName = order != null ? recipeFor(order.drink).name : '';
+    const summaryText = this.add.text(0, 20, summarySentence(report.summary, drinkName), {
       fontSize: '14px', color: '#2d2016', align: 'center', wordWrap: { width: 330 },
     }).setOrigin(0.5);
     const bd = this.add.text(0, 110, [
-      `Order match ${report.breakdown.orderMatch}/45`, `Recipe ${report.breakdown.recipe}/25`,
-      `Technique ${report.breakdown.technique}/15`, `Time ${report.breakdown.time}/10`, `Waste ${report.breakdown.waste}/5`,
+      BREAKDOWN_COPY.orderMatch(report.breakdown.orderMatch), BREAKDOWN_COPY.recipe(report.breakdown.recipe),
+      BREAKDOWN_COPY.technique(report.breakdown.technique), BREAKDOWN_COPY.time(report.breakdown.time),
+      BREAKDOWN_COPY.waste(report.breakdown.waste),
     ].join('\n'), { fontSize: '12px', color: '#7a6a5c', align: 'center', lineSpacing: 4 }).setOrigin(0.5);
     const next = this.makeButton(0, FEEDBACK.nextOffsetY, 220, BTN.h, () => MENU.next, () => this.dismissFeedbackCard(), COL.teal);
     card.add([scrim, bg, title, ...chipTexts, summaryText, bd, next]);
@@ -514,10 +520,10 @@ export class GameScene extends Phaser.Scene {
     grinds.forEach((g, i) => {
       this.controlsView?.add(this.makeButton(COL_X[i] ?? 65, ROW_Y[0], BTN.w, BTN.h, () => labels[g], () => { this.ext.grind = g; }, this.ext.grind === g ? COL.teal : COL.coffee));
     });
-    this.controlsView?.add(this.makeButton(65, ROW_Y[1], BTN.w, BTN.h, () => `Dose +1 g (${this.ext.doseGrams} g)`, () => {
+    this.controlsView?.add(this.makeButton(65, ROW_Y[1], BTN.w, BTN.h, () => STATION_COPY.dose(this.ext.doseGrams), () => {
       if (this.ext.doseGrams < 22) this.ext.doseGrams += 1;
     }));
-    this.controlsView?.add(this.makeHoldButton(195, ROW_Y[1], BTN.w, BTN.h, () => `Tamp ${Math.round(this.ext.tampKg)} kg`, () => { this.ext.tampHeld = true; }, () => {
+    this.controlsView?.add(this.makeHoldButton(195, ROW_Y[1], BTN.w, BTN.h, () => STATION_COPY.tamp(Math.round(this.ext.tampKg)), () => { this.ext.tampHeld = true; }, () => {
       if (!this.ext.tampHeld) return;
       this.ext.tampHeld = false;
       this.ext.tampGood = this.ext.tampPeakKg >= EXTRACTION.tampBandKg[0] && this.ext.tampPeakKg <= EXTRACTION.tampBandKg[1];
@@ -525,12 +531,12 @@ export class GameScene extends Phaser.Scene {
       this.ext.tampKg = 0;
       this.ext.tampPeakKg = 0;
     }));
-    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.ext.brewing ? 'STOP' : 'Brew'), () => {
+    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.ext.brewing ? STATION_COPY.stop : STATION_COPY.brew), () => {
       if (this.ext.brewing) this.stopPull();
       else if (this.ext.pulls.length < 3) { this.ext.brewing = true; sfx.startExtraction(); }
-      else this.toast('Three shots pulled already \u2014 that\u2019s the maximum.');
+      else this.toast(TOAST_COPY.maxShots);
     }, this.ext.brewing ? COL.red : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => 'Empty grinder \u00b7 start over', () => {
+    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => STATION_COPY.emptyGrinder, () => {
       this.ext = freshExtraction();
     }));
   }
@@ -557,12 +563,12 @@ export class GameScene extends Phaser.Scene {
     this.stationView?.add(this.add.image(290, 445, 'wand').setScale(3));
     this.statusLine('milk-status');
 
-    this.controlsView?.add(this.makeButton(65, ROW_Y[0], BTN.w, BTN.h, () => 'Small jug', () => {
+    this.controlsView?.add(this.makeButton(65, ROW_Y[0], BTN.w, BTN.h, () => STATION_COPY.smallJug, () => {
       this.milk.jug = 'small-jug';
       this.milk.used = true;
       jugSprite.setTexture('jug-small');
     }, this.milk.jug === 'small-jug' ? COL.teal : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[0], BTN.w, BTN.h, () => 'Large jug', () => {
+    this.controlsView?.add(this.makeButton(195, ROW_Y[0], BTN.w, BTN.h, () => STATION_COPY.largeJug, () => {
       this.milk.jug = 'large-jug';
       this.milk.used = true;
       jugSprite.setTexture('jug-large');
@@ -572,13 +578,13 @@ export class GameScene extends Phaser.Scene {
       const next = milks[(milks.indexOf(this.milk.type) + 1) % milks.length] ?? 'whole';
       this.milk.type = next;
     }));
-    this.controlsView?.add(this.makeHoldButton(65, ROW_Y[1], BTN.w, BTN.h, () => `Fill ${Math.round(this.milk.fillMl)} ml`, () => { this.milk.filling = true; this.milk.used = true; }, () => { this.milk.filling = false; }));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.purged ? 'Purged \u2713' : 'Purge wand'), () => { this.milk.purged = true; }, this.milk.purged ? COL.green : COL.coffee));
-    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.ruined ? 'Empty jug' : this.milk.steaming ? 'Remove jug' : 'Steam'), () => {
+    this.controlsView?.add(this.makeHoldButton(65, ROW_Y[1], BTN.w, BTN.h, () => STATION_COPY.fill(Math.round(this.milk.fillMl)), () => { this.milk.filling = true; this.milk.used = true; }, () => { this.milk.filling = false; }));
+    this.controlsView?.add(this.makeButton(195, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.purged ? STATION_COPY.purged : STATION_COPY.purgeWand), () => { this.milk.purged = true; }, this.milk.purged ? COL.green : COL.coffee));
+    this.controlsView?.add(this.makeButton(325, ROW_Y[1], BTN.w, BTN.h, () => (this.milk.ruined ? STATION_COPY.emptyJug : this.milk.steaming ? STATION_COPY.removeJug : STATION_COPY.steam), () => {
       if (this.milk.ruined) {
         this.wasteEvents.push('emptied-jug');
         this.milk = freshMilk(this.level ?? ({ milks: ['whole'] } as LevelDef));
-        this.toast('Jug emptied \u2014 refill and steam again.');
+        this.toast(TOAST_COPY.jugEmptied);
         return;
       }
       if (this.milk.steaming) {
@@ -597,10 +603,10 @@ export class GameScene extends Phaser.Scene {
         sfx.startSteam();
         sfx.setSteamDepth(this.milk.wandDepth === 'deep');
       } else {
-        this.toast('Pick a jug and fill it with milk first.');
+        this.toast(TOAST_COPY.needJug);
       }
     }, this.milk.steaming ? COL.red : COL.coffee));
-    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => `Wand depth: ${this.milk.wandDepth} (tap to toggle)`, () => {
+    this.controlsView?.add(this.makeButton(195, ROW_Y[2], BTN.wideW, BTN.h, () => STATION_COPY.wandDepth(this.milk.wandDepth), () => {
       this.milk.wandDepth = this.milk.wandDepth === 'shallow' ? 'deep' : 'shallow';
       sfx.setSteamDepth(this.milk.wandDepth === 'deep');
     }));
@@ -614,7 +620,7 @@ export class GameScene extends Phaser.Scene {
       this.wasteEvents.push('jug-overflow');
       this.milk.ruined = true;
       this.milk.fillMl = 0;
-      this.toast('The small jug overflows \u2014 empty it and use the large jug.');
+      this.toast(TOAST_COPY.smallJugOverflow);
     }
   }
 
@@ -644,7 +650,7 @@ export class GameScene extends Phaser.Scene {
     }));
     this.controlsView?.add(this.makeHoldButton(325, ROW_Y[2], BTN.w, BTN.h, () => GAME_COPY.pourMilk, () => {
       if (!this.milk.used || this.milk.ruined) {
-        this.toast('Steam some milk first.');
+        this.toast(TOAST_COPY.needMilk);
         return;
       }
       this.pushUndo();
@@ -675,7 +681,7 @@ export class GameScene extends Phaser.Scene {
   private undoAssembly(): void {
     const prev = this.asm.undoStack.pop();
     if (prev == null) {
-      this.toast('Nothing to undo.');
+      this.toast(TOAST_COPY.nothingToUndo);
       return;
     }
     const { pouringWater: _pw, undoStack: _us, ...snapshot } = this.asm;
@@ -717,10 +723,10 @@ export class GameScene extends Phaser.Scene {
     const extStatus = this.stationView?.getByName('ext-status') as Phaser.GameObjects.Text | null;
     if (extStatus != null) {
       extStatus.setText([
-        `Grind ${this.ext.grind} \u00b7 dose ${this.ext.doseGrams} g (target 18 \u00b12) \u00b7 tamp ${Math.round(this.ext.tampKg)} kg`,
+        STATUS_COPY.extraction(this.ext.grind, this.ext.doseGrams, Math.round(this.ext.tampKg)),
         this.ext.brewing
-          ? `Brewing \u2014 ${Math.round(this.ext.brewSeconds * 10) / 10}s \u00b7 yield ${Math.round(this.ext.yieldGrams)} g \u00b7 STOP in 24\u201331s`
-          : `Shots pulled: ${this.ext.pulls.length}`,
+          ? STATUS_COPY.brewing(Math.round(this.ext.brewSeconds * 10) / 10, Math.round(this.ext.yieldGrams))
+          : STATUS_COPY.shotsPulled(this.ext.pulls.length),
       ].join('\n'));
     }
     const milkStatus = this.stationView?.getByName('milk-status') as Phaser.GameObjects.Text | null;
@@ -728,17 +734,22 @@ export class GameScene extends Phaser.Scene {
       const spec = recipe.milkVolumeMl[order.size] ?? null;
       const tempTarget = order.extraHot ? MILK_TEMP.extraHot.target : this.milk.type === 'oat' ? MILK_TEMP.oat.target : MILK_TEMP.dairy.target;
       milkStatus.setText([
-        `Jug ${this.milk.jug ?? 'none'} \u00b7 ${this.milk.type} \u00b7 wand ${this.milk.wandDepth}${this.milk.purged ? ' \u00b7 purged \u2713' : ''}${this.milk.ruined ? ' \u00b7 SCORCHED' : ''}`,
-        `Fill ${Math.round(this.milk.fillMl)}${spec != null ? `/${spec}` : ''} ml \u00b7 ${Math.round(this.milk.tempC)}\u00b0C \u00b7 foam ${this.milk.foamCm.toFixed(1)} cm \u00b7 target ${tempTarget[0]}\u2013${tempTarget[1]}\u00b0C`,
+        STATUS_COPY.jug(this.milk.jug ?? 'none', this.milk.type, this.milk.wandDepth, this.milk.purged, this.milk.ruined),
+        STATUS_COPY.milkFill(
+          Math.round(this.milk.fillMl), spec, Math.round(this.milk.tempC), this.milk.foamCm.toFixed(1), tempTarget,
+        ),
       ].join('\n'));
     }
     const asmStatus = this.stationView?.getByName('asm-status') as Phaser.GameObjects.Text | null;
     if (asmStatus != null) {
       const shotsAvailable = this.ext.pulls.length - this.asm.shotsUsed;
       asmStatus.setText([
-        `Vessel ${this.asm.vessel ?? 'none'} \u00b7 shots in cup ${this.asm.shotsUsed} (${shotsAvailable} spare)`,
-        `Water ${this.asm.waterMl != null ? `${Math.round(this.asm.waterMl)} ml` : '\u2014'} \u00b7 milk ${this.asm.milkPoured ? `${Math.round(this.milk.fillMl)} ml / ${this.milk.foamCm.toFixed(1)} cm foam` : '\u2014'}`,
-        `Steps: ${this.asm.actions.length > 0 ? this.asm.actions.join(' \u2192 ') : 'none yet'}`,
+        STATUS_COPY.vessel(this.asm.vessel ?? 'none', this.asm.shotsUsed, shotsAvailable),
+        STATUS_COPY.water(
+          this.asm.waterMl != null ? `${Math.round(this.asm.waterMl)} ml` : '\u2014',
+          this.asm.milkPoured ? `${Math.round(this.milk.fillMl)} ml / ${this.milk.foamCm.toFixed(1)} cm foam` : '\u2014',
+        ),
+        STATUS_COPY.steps(this.asm.actions.length > 0 ? this.asm.actions.join(' \u2192 ') : STATUS_COPY.noSteps),
       ].join('\n'));
     }
     this.guidedText?.setText(this.level?.guided === true ? this.guidedHint() : '');
@@ -750,28 +761,29 @@ export class GameScene extends Phaser.Scene {
     const order = this.currentDrink();
     if (order == null) return '';
     const recipe = recipeFor(order.drink);
-    if (this.ext.grind !== 'fine') return '1. Set the grinder to fine.';
-    if (this.ext.doseGrams < 16 || this.ext.doseGrams > 20) return '2. Tap Dose until you reach 18 g (16\u201320 g works).';
+    const milkMl = recipe.milkVolumeMl[order.size] ?? 0;
+    if (this.ext.grind !== EXTRACTION.correctGrind) return GUIDED_COPY.setGrind;
+    if (this.ext.doseGrams < EXTRACTION.doseBandGrams[0] || this.ext.doseGrams > EXTRACTION.doseBandGrams[1]) {
+      return GUIDED_COPY.dose;
+    }
     if (this.ext.pulls.length === 0) {
-      if (!this.ext.tampGood) return '3. Hold Tamp and release inside 15\u201320 kg.';
-      return '4. Tap Brew, then STOP between 24 and 31 seconds.';
+      return this.ext.tampGood ? GUIDED_COPY.brew : GUIDED_COPY.tamp;
     }
     if (this.ext.pulls.length < order.shots) {
-      if (!this.ext.tampGood) return '5. Tamp the fresh dose (each shot needs its own tamp).';
-      return '6. Tap Brew, then STOP between 24 and 31 seconds.';
+      return this.ext.tampGood ? GUIDED_COPY.brewAgain : GUIDED_COPY.tampAgain;
     }
     if (recipe.milkDrink && !this.asm.milkPoured) {
-      if (this.milk.jug == null) return `5. Milk tab: pick the ${(recipe.milkVolumeMl[order.size] ?? 0) > 150 ? 'large' : 'small'} jug.`;
-      if (this.milk.fillMl === 0) return `6. Hold Fill to the line (${recipe.milkVolumeMl[order.size] ?? 0} ml).`;
-      if (!this.milk.purged) return '7. Tap Purge wand before steaming.';
-      if (!this.milk.steaming && this.milk.tempC < 50) return '8. Tap Steam, watch the gauge, remove the jug on target.';
-      if (this.milk.steaming) return '8. Steaming \u2014 remove the jug on target temperature.';
+      if (this.milk.jug == null) return GUIDED_COPY.pickJug(milkMl);
+      if (this.milk.fillMl === 0) return GUIDED_COPY.fill(milkMl);
+      if (!this.milk.purged) return GUIDED_COPY.purge;
+      if (!this.milk.steaming && this.milk.tempC < STEAM_HINT_TEMP_C) return GUIDED_COPY.steam;
+      if (this.milk.steaming) return GUIDED_COPY.steaming;
     }
-    if (this.asm.vessel == null) return '9. Assembly tab: choose the right cup.';
-    if (recipe.assembly.includes('shot') && !this.asm.actions.includes('shot')) return '10. Tap Add espresso.';
-    if (recipe.assembly.includes('water') && !this.asm.actions.includes('water')) return '11. Hold Add water to the line.';
-    if (recipe.assembly.includes('milk') && !this.asm.actions.includes('milk')) return '12. Tap Pour milk.';
-    return 'Serve when the drink matches the ticket!';
+    if (this.asm.vessel == null) return GUIDED_COPY.chooseCup;
+    if (recipe.assembly.includes('shot') && !this.asm.actions.includes('shot')) return GUIDED_COPY.addEspresso;
+    if (recipe.assembly.includes('water') && !this.asm.actions.includes('water')) return GUIDED_COPY.addWater;
+    if (recipe.assembly.includes('milk') && !this.asm.actions.includes('milk')) return GUIDED_COPY.pourMilk;
+    return GUIDED_COPY.serve;
   }
 
   // ---------- simulation ----------
@@ -811,13 +823,13 @@ export class GameScene extends Phaser.Scene {
       const failAt = order.extraHot ? MILK_TEMP.extraHot.failAt : this.milk.type === 'oat' ? MILK_TEMP.oat.failAt : MILK_TEMP.dairy.failAt;
       if (!this.milk.hotWarned && this.milk.tempC >= failAt) {
         this.milk.hotWarned = true;
-        this.toast('The milk is too hot \u2014 remove the jug now.');
+        this.toast(TOAST_COPY.milkTooHot);
       }
       if (this.milk.tempC >= failAt + 5) {
         this.milk.steaming = false;
         this.milk.ruined = true;
         sfx.stopSteam();
-        this.toast('The milk is scorched \u2014 empty the jug and start again.');
+        this.toast(TOAST_COPY.milkScorched);
       }
     }
 
@@ -882,7 +894,7 @@ export class GameScene extends Phaser.Scene {
       this.orderChanged = true;
       const bubble = this.children.getByName('speech-bubble') as Phaser.GameObjects.Text | null;
       bubble?.setText(`\u201C${GAME_COPY.orderChange}\u201D`);
-      this.toast('The ticket changed \u2014 check it!');
+      this.toast(TOAST_COPY.ticketChanged);
       this.renderTicket();
       if (this.ticketPanel != null && !this.save.settings.reduceAnimations) {
         this.tweens.add({ targets: this.ticketPanel, alpha: { from: 1, to: 0.4 }, duration: 250, yoyo: true, repeat: 3 });
