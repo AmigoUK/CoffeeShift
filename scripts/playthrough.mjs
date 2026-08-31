@@ -15,7 +15,7 @@ import { writeFileSync } from 'node:fs';
 
 const MODE = process.argv[2] ?? 'clean';
 const SCALE = Number(process.env.SCALE ?? 2);
-const BASE = 'http://localhost:5173';
+const BASE = `http://localhost:${process.env.VITE_PORT ?? 5173}`;
 const OUT = `/tmp/playthrough-${MODE}.json`;
 const LEVELS = (process.env.LEVELS ?? 'L1,L2,L3,L4,L5,P1,P2,P3,P4,P5,S1,S2,S3,S4,S5,S6,S7,S8,S9,S10').split(',');
 

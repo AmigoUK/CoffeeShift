@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const BASE = 'http://127.0.0.1:4173';
+const BASE = `http://127.0.0.1:${process.env.PREVIEW_PORT ?? '4173'}`;
 
 test.describe('PWA (production preview)', () => {
   test('service worker controls the page and the manifest is linked', async ({ page }) => {

@@ -5,7 +5,7 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
-const BASE = 'http://127.0.0.1:4180';
+const BASE = `http://127.0.0.1:${process.env.APP_PORT ?? 4180}`;
 const OUT = 'docs/screenshots';
 mkdirSync(OUT, { recursive: true });
 

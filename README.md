@@ -43,7 +43,7 @@ offline after the first load.
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:5173 (override with VITE_PORT)
 ```
 
 Production and tests:
@@ -58,7 +58,7 @@ npm run preview      # serve the production build locally
 Docker:
 
 ```bash
-docker compose up -d --build   # nginx serving the game on port 4180
+docker compose up -d --build   # nginx serving the game on port 4180 (override with APP_PORT)
 ```
 
 ## Project structure

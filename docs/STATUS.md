@@ -11,7 +11,8 @@ Punkt startowy dla następnej sesji. Repo: **AmigoUK/CoffeeShift**.
 - **Audyt projektu** — `RAPORT_AUDYTU.md` (8 torów, w tym UI/UX na realnej przeglądarce).
   Pliki robocze agentów w `.audit/` (ignorowane przez git).
 - Testy: 58 jednostkowych + 15 E2E (`tests/e2e/regression.spec.ts` chroni naprawy z audytu).
-- Docker: `docker compose up -d --build` → nginx na porcie **4180** (kontener `coffeeshift-web`).
+- Docker: `docker compose up -d --build` → nginx na porcie **4180** (kontener `coffeeshift-web`);
+  port zmienia `APP_PORT`, dev-server `VITE_PORT`, preview dla testów `PREVIEW_PORT`.
 - Tailscale: `serve` 443 i 8444 → 127.0.0.1:4180.
 
 ## SPROSTOWANIE — „S9 multi-drink 41%" NIE było defektem poziomu
@@ -58,7 +59,7 @@ narzut latencji z pomiaru.
 
 ## Środowisko
 
-- Dev: `npm run dev` (5173). Testy: `npm test`, `npm run test:e2e`.
+- Dev: `npm run dev` (5173, `VITE_PORT`). Testy: `npm test`, `npm run test:e2e`, lint: `npm run lint`.
 - Bot: `LEVELS=S9 SCALE=1 node scripts/playthrough.mjs clean` (patrz sprostowanie wyżej).
 - Gra na żywo: Docker 4180 + tailscale serve. Service worker wymaga HTTPS —
   bez TLS przed aplikacją PWA nie działa offline i nie zgłasza tego w UI.

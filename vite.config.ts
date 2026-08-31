@@ -32,6 +32,6 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   // Set VITE_PREVIEW_HOST when previewing behind a named host; unset means Vite's default.
   preview: process.env.VITE_PREVIEW_HOST != null ? { allowedHosts: [process.env.VITE_PREVIEW_HOST] } : {},
-  server: { host: true, port: 5173 },
+  server: { host: true, port: Number(process.env.VITE_PORT ?? 5173) },
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 });
