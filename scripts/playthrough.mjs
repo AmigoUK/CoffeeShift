@@ -30,10 +30,9 @@ const MILK_ML = {
 };
 const WATER_ML = { americano: { small: 150, medium: 250, large: 350 } };
 const FOAM_OK = { latte: [0.5, 1.5], cappuccino: [1.5, 3.5], 'flat-white': [0, 1.0] };
-const VESSEL = {
-  espresso: [65, 655], americano: [195, 655], cappuccino: [325, 655],
-  latte: [65, 711], 'flat-white': [195, 711], 'takeaway-cup': [325, 711],
-};
+// Vessel grid order must match renderAssembly's list; positions are derived from the
+// layout read off the running game (see L below).
+const VESSEL_ORDER = ['espresso', 'americano', 'cappuccino', 'latte', 'flat-white', 'takeaway-cup'];
 const TAMP_HOLD_MS = 2200; // ≈17.6 kg at 8 kg/s
 
 // seeded sloppy rng → reproducible runs
@@ -54,6 +53,14 @@ for (let i = 0; i < 150; i++) {
 }
 await page.evaluate((s) => window.__COFFEE_SHIFT.setTimeScale(s), SCALE);
 const rect = await page.evaluate(() => window.__COFFEE_SHIFT.canvasRect());
+// Button positions come from the game's own layout module via the dev hook. They used to
+// be copied here, so the v0.4.0 layout rework would have left the bot tapping empty canvas.
+const L = await page.evaluate(() => window.__COFFEE_SHIFT.layout());
+const [CX0, CX1, CX2] = L.COL_X;
+const [ROW0, ROW1, ROW2] = L.ROW_Y;
+const BAR = L.BAR_Y;
+const TABS = L.TABS_Y;
+const FEEDBACK_NEXT_Y = L.FEEDBACK.y + L.FEEDBACK.nextOffsetY;
 const sx = rect.width / 390, sy = rect.height / 844;
 
 const tap = async (gx, gy) => { await page.mouse.click(rect.left + gx * sx, rect.top + gy * sy); await page.waitForTimeout(60); };
@@ -121,7 +128,7 @@ async function ensureTab(station) {
   for (let guard = 0; guard < 5; guard++) {
     const cur = await page.evaluate(() => window.__COFFEE_SHIFT.activeScene().activeStation);
     if (cur === station) return;
-    await tap(station === 'espresso' ? 65 : station === 'milk' ? 195 : 325, 290);
+    await tap(station === 'espresso' ? CX0 : station === 'milk' ? CX1 : CX2, TABS);
     await page.waitForTimeout(250);
   }
   throw new Error(`could not switch to ${station} tab`);
@@ -142,21 +149,21 @@ async function playDrink() {
     for (let guard = 0; guard < 8; guard++) {
       const d = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.doseGrams);
       if (d >= wantDose) break;
-      await tap(65, 712);
+      await tap(CX0, ROW1);
     }
     for (let guard = 0; guard < 4; guard++) {
-      await holdFor(195, 712, Math.round(TAMP_HOLD_MS / SCALE));
+      await holdFor(CX1, ROW1, Math.round(TAMP_HOLD_MS / SCALE));
       const good = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.tampGood);
       if (good === true) break;
     }
     const stopAt = clean ? 27.0 : (rnd() < 0.3 ? 22.5 : 28.5);
-    await tap(325, 712); // brew
+    await tap(CX2, ROW1); // brew
     // verify with a FRESH read; a blind re-tap could stop an already-running shot
     for (let guard = 0; guard < 3; guard++) {
       const brewing = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.brewing);
       if (brewing === true) break;
       await page.waitForTimeout(250);
-      if (guard < 2) await tap(325, 712);
+      if (guard < 2) await tap(CX2, ROW1);
     }
     await page.waitForTimeout(Math.max(0, (stopAt - 1.2) * 1000) / SCALE);
     // stop with read-before-tap discipline: never tap unless brewing is confirmed
@@ -165,7 +172,7 @@ async function playDrink() {
       const ext = await readField(() => { const e = window.__COFFEE_SHIFT.activeScene().ext; return { brewing: e.brewing, pulls: e.pulls.length }; });
       if (pullsBefore < 0) pullsBefore = ext.pulls;
       if (!ext.brewing) break;
-      await tap(325, 712);
+      await tap(CX2, ROW1);
       await page.waitForTimeout(350);
     }
     const pullsAfter = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.pulls.length);
@@ -183,27 +190,27 @@ async function playDrink() {
     for (let guard = 0; guard < 4; guard++) {
       const j = await readField(() => window.__COFFEE_SHIFT.activeScene().milk.jug);
       if (j === wantJug) break;
-      await tap(wantJug === 'large-jug' ? 195 : 65, 655);
+      await tap(wantJug === 'large-jug' ? CX1 : CX0, ROW0);
       await page.waitForTimeout(200);
     }
     for (let i = 0; i < 4; i++) {
       const mt = await readField(() => window.__COFFEE_SHIFT.activeScene().milk.type);
       if (mt === order.milk) break;
-      await tap(325, 655);
+      await tap(CX2, ROW0);
       await page.waitForTimeout(150);
     }
     const fillTarget = spec * (clean ? 0.99 : 0.9 + rnd() * 0.18);
-    await holdFor(65, 712, Math.max(0, ((fillTarget - 4) / (90 * SCALE)) * 1000));
+    await holdFor(CX0, ROW1, Math.max(0, ((fillTarget - 4) / (90 * SCALE)) * 1000));
     for (let trim = 0; trim < 5; trim++) {
       const f = await readField(() => window.__COFFEE_SHIFT.activeScene().milk.fillMl);
       if (f >= fillTarget - 6) break;
-      await holdFor(65, 712, 120);
+      await holdFor(CX0, ROW1, 120);
     }
     if (clean || rnd() >= 0.25) {
       for (let guard = 0; guard < 3; guard++) {
         const p = await readField(() => window.__COFFEE_SHIFT.activeScene().milk.purged);
         if (p === true) break;
-        await tap(195, 712);
+        await tap(CX1, ROW1);
         await page.waitForTimeout(150);
       }
     }
@@ -213,19 +220,19 @@ async function playDrink() {
     const foamTarget = clean ? (foamBand[0] + foamBand[1]) / 2 : foamBand[0] - 0.2 + rnd() * (foamBand[1] - foamBand[0] + 0.9);
     const tempRateGs = order.milk === 'oat' ? 3.5 : 3;
     for (let guard = 0; guard < 4; guard++) {
-      await tap(325, 712);
+      await tap(CX2, ROW1);
       try { await waitState((x) => x.milk.steaming, 1800, 'steam start'); break; } catch { /* retry tap */ }
     }
     const switchDepth = clean || rnd() >= 0.25;
     if (switchDepth) {
       const foamSwitch = Math.max(0.05, foamTarget - 0.35);
       await page.waitForTimeout(Math.max(0, (foamSwitch / (0.14 * SCALE)) * 1000 - 250));
-      await tap(195, 764);
+      await tap(CX1, ROW2);
       await page.waitForTimeout(300);
       for (let guard = 0; guard < 5; guard++) {
         const depth = await readField(() => window.__COFFEE_SHIFT.activeScene().milk.wandDepth);
         if (depth === 'deep') break;
-        await tap(195, 764);
+        await tap(CX1, ROW2);
         await page.waitForTimeout(300);
       }
     }
@@ -234,7 +241,7 @@ async function playDrink() {
     await page.waitForTimeout((steamForS * 1000) / SCALE);
     let jugOff = false;
     for (let guard = 0; guard < 4 && !jugOff; guard++) {
-      if (guard > 0) await tap(325, 712);
+      if (guard > 0) await tap(CX2, ROW1);
       try { await waitState((x) => !x.milk.steaming, 2500, 'jug off check'); jugOff = true; } catch { /* retry */ }
     }
     if (!jugOff) throw new Error('could not remove the jug');
@@ -249,7 +256,9 @@ async function playDrink() {
   if (order == null) return;
   await ensureTab('assembly');
   const v = order.takeaway ? 'takeaway-cup' : order.drink;
-  const [vx, vy] = VESSEL[v] ?? VESSEL.espresso;
+  const vi = Math.max(0, VESSEL_ORDER.indexOf(v));
+  const vx = L.COL_X[vi % 3];
+  const vy = L.ROW_Y[Math.floor(vi / 3)];
   for (let guard = 0; guard < 4; guard++) {
     const vs = await readField(() => window.__COFFEE_SHIFT.activeScene().asm.vessel);
     if (vs === v) break;
@@ -257,20 +266,20 @@ async function playDrink() {
     await page.waitForTimeout(200);
   }
   const shotsAvailable = await readField(() => window.__COFFEE_SHIFT.activeScene().ext.pulls.length - window.__COFFEE_SHIFT.activeScene().asm.shotsUsed);
-  for (let i = 0; i < Math.min(order.shots, shotsAvailable); i++) await tap(65, 764);
+  for (let i = 0; i < Math.min(order.shots, shotsAvailable); i++) await tap(CX0, ROW2);
   if (order.drink === 'americano') {
     const spec = WATER_ML.americano[order.size];
     const target = spec * (clean ? 0.99 : 0.9 + rnd() * 0.18);
-    await holdFor(195, 764, Math.max(0, ((target - 3) / (60 * SCALE)) * 1000));
+    await holdFor(CX1, ROW2, Math.max(0, ((target - 3) / (60 * SCALE)) * 1000));
     for (let trim = 0; trim < 5; trim++) {
       const w = await readField(() => window.__COFFEE_SHIFT.activeScene().asm.waterMl ?? 0);
       if (w >= target - 8) break;
-      await holdFor(195, 764, 120);
+      await holdFor(CX1, ROW2, 120);
     }
   }
   if (order.drink in MILK_ML) {
     for (let guard = 0; guard < 4; guard++) {
-      await holdFor(325, 764, 150);
+      await holdFor(CX2, ROW2, 150);
       const poured = await readField(() => window.__COFFEE_SHIFT.activeScene().asm.milkPoured);
       if (poured === true) break;
     }
@@ -300,12 +309,12 @@ async function playLevel(id) {
   for (;;) {
     const s = await scene();
     if (s.level == null) break; // level finished
-    if (s.feedbackCard != null) { await tap(195, 640); await page.waitForTimeout(250); continue; }
+    if (s.feedbackCard != null) { await tap(CX1, FEEDBACK_NEXT_Y); await page.waitForTimeout(250); continue; }
     if (s.transitioning) { await page.waitForTimeout(400); continue; } // customer lost transition
     const order = s.orders[s.drinkIndex] ?? null;
     if (order == null) { await page.waitForTimeout(400); continue; }
     await playDrink();
-    await tap(320, 812); // serve
+    await tap(320, BAR); // serve
     const st = await scene();
     if (st.feedbackCard == null && !st.transitioning) {
       await waitState((x) => x.feedbackCard != null || x.transitioning, 30000, 'serve');
@@ -317,7 +326,7 @@ async function playLevel(id) {
     }
     const rep = await page.evaluate(() => window.__COFFEE_SHIFT.lastReport);
     reports.push({ ...rep, lost: false, milk: milkTrace });
-    await tap(195, 640); // next
+    await tap(CX1, FEEDBACK_NEXT_Y); // next
     await page.waitForTimeout(250);
   }
   return reports;
