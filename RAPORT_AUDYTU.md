@@ -190,9 +190,9 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 - ✅ ~~Zaimportować `SAVE_KEY` w testach E2E~~ — **v0.5.0**, przez helpery `clearSave`/`readSave`/`writeSave`
 - ✅ ~~Uporządkować `CHANGELOG.md`~~ — **v0.2.0**
 - ✅ ~~Dodać `aria-live`, zarządzanie fokusem i alternatywę tekstową dla canvasu~~ — **v0.4.0**
-- ⬜ Sparametryzować porty `4180`/`5173` w dokumentacji i skryptach
-- ⬜ Rozważyć code splitting Phasera (365 kB gzip, longtask 469 ms)
-- ⬜ Zastosować formatter do całego repo (skonfigurowany, świadomie niewymuszony w CI)
+- ✅ ~~Sparametryzować porty `4180`/`5173`~~ — **v0.6.0**. `APP_PORT`, `VITE_PORT`, `PREVIEW_PORT` sterują compose, dev-serverem, serwerami Playwrighta i obydwoma skryptami
+- ✅ ~~Code splitting Phasera~~ — **v0.6.0**. Phaser ładowany dynamicznie przy pierwszym wejściu w poziom; zmierzone przy CPU 4× wolniej: menu klikalne **867 → 188 ms**, pierwsze malowanie **624 → 172 ms**, chunk wejściowy **1,4 MB → 31 kB**
+- ✅ ~~Zastosować formatter do całego repo~~ — **v0.6.0**. `npm run lint` to teraz `biome check`, więc formatowanie i kolejność importów są egzekwowane razem z regułami lintera
 
 ### 4. Niskie (długi ogon)
 
@@ -212,7 +212,8 @@ Pozycje, które **muszą** zostać rozwiązane przed wdrożeniem na nowej platfo
 
 ---
 
-*Stan na 2026-08-31, po wydaniach v0.2.0 – v0.5.1. **Wszystkie znaleziska krytyczne i wysokie
-są zamknięte.** Z średnich zostały trzy, wypisane wyżej.*
+*Stan na 2026-08-31, po wydaniach v0.2.0 – v0.6.0. **Wszystkie znaleziska krytyczne, wysokie
+i średnie z planu naprawczego są zamknięte.** Otwarte pozostają wyłącznie pozycje niskie
+(kosmetyka, martwe zasoby) oraz jedna znana niestabilność testu, opisana w `docs/STATUS.md`.*
 
 *Pliki robocze poszczególnych agentów: `.audit/*.md`. Zrzuty ekranu i dane pomiarowe toru UI/UX: katalog scratch sesji (`shots/`, `*.json`).*

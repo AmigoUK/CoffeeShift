@@ -6,6 +6,29 @@ All notable changes to **Coffee Shift** are documented in this file.
 
 _Nothing yet._
 
+## [0.6.0] — 2026-09-01
+
+### Changed
+- Phaser is loaded on demand. The menu, level select and settings are plain DOM, but were
+  shown on BootScene's `boot-ready`, so every player waited for 1.4 MB of engine to download
+  and initialise before anything was clickable. Measured on a preview build with the CPU
+  throttled 4x: menu clickable 867 ms → **188 ms**, first paint 624 ms → **172 ms**, entry
+  chunk 1.4 MB → **31 kB** (11 kB gzip). The canvas now exists only once a level has been
+  entered.
+- `npm run lint` is `biome check`, so formatting and import order are enforced with the lint
+  rules instead of relying on someone remembering to run them. The formatter was applied
+  across the codebase in its own commit.
+- Ports are configurable: `APP_PORT`, `VITE_PORT` and `PREVIEW_PORT` drive docker-compose,
+  the dev server, both Playwright servers and the node scripts, all defaulting to today's
+  values. They had been written out in eight files, where the docs quietly fell behind.
+
+### Added
+- `@types/node`, which the specs and scripts needed and had been reaching for without.
+- One CI retry for the timing-sensitive `Learn L1` spec: it stops a shot on a fixed 27.2 s
+  against a 24–31 s grading band, so a busy main thread can push it out of band. Playwright
+  still reports it as flaky rather than hiding it; `docs/STATUS.md` records that the real
+  fix is to close the loop on `ext.brewSeconds`.
+
 ## [0.5.1] — 2026-08-31
 
 ### Fixed
@@ -212,7 +235,8 @@ now enforced by a tool rather than by memory.
 ### Added
 - Initial project scaffold: Vite + vanilla TypeScript (strict), Phaser, vite-plugin-pwa, Vitest.
 
-[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/AmigoUK/CoffeeShift/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/AmigoUK/CoffeeShift/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/AmigoUK/CoffeeShift/compare/v0.3.0...v0.4.0
